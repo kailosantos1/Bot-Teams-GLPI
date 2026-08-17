@@ -1,0 +1,276 @@
+forms:
+  manutencao:
+    id: 1
+    name: "Abertura de Chamado - Manutenção"
+    keywords:
+      - "manutencao"
+      - "manutenção"
+      - "defeito"
+      - "estragou"
+      - "lento"
+      - "problema"
+      - "computador"
+      - "impressora"
+      - "erro"
+    questions:
+      tipo_solicitacao:
+        id: 2
+        label: "Qual o tipo da solicitação?"
+        required: true
+        options:
+          - "Manutenção de Equipamentos"
+          - "Manutenção de Sistemas"
+          - "Acessos"
+
+      equipamento:
+        id: 26
+        label: "Qual o equipamento ou sistema referente à solicitação?"
+        required: true
+        options:
+          - "Computador/Hardware"
+          - "Periféricos (Webcam/Impressora)"
+          - "Smartphone/Mobile"
+          - "Sistemas/Softwares"
+          - "Servidores/Pastas de Arquivos"
+          - "Internet/Páginas da Web"
+          - "Outros"
+
+      descricao_problema:
+        id: 3
+        label: "Descreva o problema ou solicitação:"
+        required: true
+
+      local_solicitacao:
+        id: 6
+        label: "Qual o local da solicitação?"
+        required: true
+        options:
+          - "Matriz"
+          - "Filial"
+
+      filial:
+        id: 7
+        label: "Escolha a sua Filial:"
+        required: true
+        depends_on:
+          field: "local_solicitacao"
+          value: "Filial"
+        options:
+          - "Maravilha"
+          - "Lages"
+          - "Videira"
+          - "Concordia"
+          - "Catanduvas"
+
+      canal_contato:
+        id: 70
+        label: "Qual o melhor canal para contato?"
+        required: true
+        options:
+          - "Microsoft Teams"
+          - "WhatsApp"
+          - "OPA"
+
+      whatsapp:
+        id: 71
+        label: "Qual o número do seu WhatsApp com DDD?"
+        required: true
+        depends_on:
+          field: "canal_contato"
+          value: "WhatsApp"
+
+      email_teams:
+        id: 72
+        label: "Qual o seu e-mail do Microsoft Teams?"
+        required: true
+        depends_on:
+          field: "canal_contato"
+          value: "Microsoft Teams"
+
+      urgencia:
+        id: 73
+        label: "Qual a urgência do chamado?"
+        required: true
+        options:
+          - "Baixa"
+          - "Média"
+          - "Alta"
+
+  cadastro:
+    id: 2
+    name: "Cadastro de Novo Colaborador"
+    keywords:
+      - "cadastrar"
+      - "cadastro"
+      - "novo colaborador"
+      - "admissao"
+      - "admissão"
+      - "novo funcionario"
+      - "novo funcionário"
+    questions:
+      nome_completo:
+        id: 8
+        label: "Qual o nome completo do novo colaborador?"
+        required: true
+
+      tipo_unidade:
+        id: 9
+        label: "O colaborador pertence a qual unidade?"
+        required: true
+        options:
+          - "Matriz"
+          - "Filial"
+
+      filial:
+        id: 10
+        label: "Escolha a Filial:"
+        required: true
+        depends_on:
+          field: "tipo_unidade"
+          value: "Filial"
+        options:
+          - "Maravilha"
+          - "Lages"
+          - "Videira"
+          - "Concordia"
+          - "Catanduvas"
+
+      setor:
+        id: 11
+        label: "Qual setor?"
+        required: true
+        options:
+          - "Comercial Peças"
+          - "Comercial Implementos"
+          - "Compras"
+          - "Financeiro"
+          - "Fiscal"
+          - "Logística"
+          - "Garantia"
+          - "Almoxarifado"
+          - "Qualidade"
+          - "Recepção"
+          - "Marketing"
+          - "Desenvolvimento e Implantações"
+          - "RH"
+
+      modelo_usuario:
+        id: 12
+        label: "Qual o modelo/perfil de usuário?"
+        required: true
+
+      acesso_vpn:
+        id: 13
+        label: "Acesso à VPN?"
+        required: true
+        options:
+          - "Sim"
+          - "Não"
+
+      licenca_m365:
+        id: 14
+        label: "Licença Microsoft 365:"
+        required: true
+        options:
+          - "Standard"
+          - "Basic"
+
+      acesso_flex:
+        id: 15
+        label: "Acessos ao FLEX?"
+        required: true
+        options:
+          - "Sim"
+          - "Não"
+
+      possui_equipamento:
+        id: 16
+        label: "Já possui equipamento?"
+        required: true
+        options:
+          - "Sim"
+          - "Não"
+
+      tipo_equipamento_existente:
+        id: 17
+        label: "Tipo de equipamento:"
+        required: true
+        depends_on:
+          field: "possui_equipamento"
+          value: "Sim"
+        options:
+          - "Desktop"
+          - "Notebook"
+
+      ramal_corporativo:
+        id: 102
+        label: "O colaborador precisará de ramal corporativo?"
+        required: true
+        options:
+          - "Sim"
+          - "Não"
+
+      equipamento_necessario:
+        id: 18
+        label: "O que o colaborador irá precisar ter de equipamento?"
+        required: true
+        multiple: true
+        options:
+          - "Desktop"
+          - "Notebook"
+          - "Celular"
+          - "Fone de ouvido com microfone"
+
+      precisa_programa:
+        id: 19
+        label: "Deverá ser instalado algum programa?"
+        required: true
+        options:
+          - "Sim"
+          - "Não"
+
+      quais_programas:
+        id: 20
+        label: "Quais programas?"
+        required: true
+        depends_on:
+          field: "precisa_programa"
+          value: "Sim"
+
+      assinatura_email:
+        id: 22
+        label: "Assinatura de Email?"
+        required: true
+        options:
+          - "Sim"
+          - "Não"
+
+      observacoes:
+        id: 24
+        label: "Observações adicionais:"
+        required: false
+
+      canal_contato:
+        id: 82
+        label: "Qual o melhor canal para entrarmos em contato com você?"
+        required: true
+        options:
+          - "WhatsApp"
+          - "Microsoft Teams"
+          - "OPA"
+
+      whatsapp:
+        id: 83
+        label: "Insira o número do WhatsApp:"
+        required: true
+        depends_on:
+          field: "canal_contato"
+          value: "WhatsApp"
+
+      email_teams:
+        id: 84
+        label: "Insira o email do Microsoft Teams:"
+        required: true
+        depends_on:
+          field: "canal_contato"
+          value: "Microsoft Teams"

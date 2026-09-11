@@ -53,4 +53,3 @@ Bot do Microsoft Teams para abertura de chamados no GLPI.
 git clone https://github.com/seu-usuario/byte-bot-chamados.git
 
 cd byte-bot-chamados
-

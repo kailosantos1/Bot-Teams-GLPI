@@ -30,7 +30,7 @@ class UserAuthorization:
     
     # Emails autorizados individualmente (fallback se não estiver em nenhum grupo)
     CADASTRO_ALLOWED_EMAILS = [
-        "exemplo@compasi.com.br",      # TI
+        "rodrigues.genes@compasi.com.br",      # TI
         # Adicione mais emails conforme necessário
     ]
     

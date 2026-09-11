@@ -4,15 +4,15 @@ import traceback
 from fastapi import FastAPI, Request, Response
 from botbuilder.core import BotFrameworkAdapter, BotFrameworkAdapterSettings, TurnContext
 from botbuilder.schema import Activity, ActivityTypes
- 
+
 from config import settings, logger
 from bot.dialogs import DynamicFormProcessor
 from bot.state import conversation_state, user_state
 from bot.utils import UserNameFormatter
 from bot.auth import UserAuthorization
- 
+
 app = FastAPI(title="Byte Bot de Chamados API")
- 
+
 adapter_settings = BotFrameworkAdapterSettings(
     app_id=settings.MICROSOFT_APP_ID,
     app_password=settings.MICROSOFT_APP_PASSWORD,
@@ -108,11 +108,16 @@ async def logic_process_message(turn_context: TurnContext):
         
         logger.info(f"✅ Usuário autorizado: {user_email}")
         logger.info("="*60)
- 
+
         user_text = (turn_context.activity.text or "").strip()
         user_name = turn_context.activity.from_property.name or "Usuário Teams"
-        
-        if not user_text:
+
+        # NOVO: quando o usuário só cola uma imagem (Ctrl+V) sem digitar
+        # nada junto, o texto vem vazio -- mas a mensagem é válida (tem
+        # anexo). Só bloqueia se realmente não tiver NEM texto NEM anexo.
+        tem_anexo = bool(getattr(turn_context.activity, "attachments", None))
+
+        if not user_text and not tem_anexo:
             first_name = UserNameFormatter.extract_first_name(user_name)
             await turn_context.send_activity(
                 f"**{first_name}**, não consegui entender sua mensagem. "
@@ -123,13 +128,17 @@ async def logic_process_message(turn_context: TurnContext):
             return
         
         turn_context.user_email = user_email
- 
+
         response_text = await DynamicFormProcessor.process_user_message(
             turn_context, user_text, user_name
         )
-        
-        await turn_context.send_activity(response_text)
- 
+
+        # Só envia se houver texto de resposta.
+        # O processador pode ter enviado mensagens manualmente (aviso),
+        # e nesse caso retorna None.
+        if response_text:
+            await turn_context.send_activity(response_text)
+
         await conversation_state.save_changes(turn_context)
         await user_state.save_changes(turn_context)
         
@@ -195,10 +204,12 @@ async def status_check():
 
 
 if __name__ == "__main__":
+    import uvicorn
+    
     uvicorn.run(
-        "main:app",
+        app,  
         host="0.0.0.0",
         port=3000,
-        workers=2,       # 2 processos paralelos
-        reload=False     # NÃO reinicia automaticamente em produção
+        log_config=None,
+        access_log=False
     )

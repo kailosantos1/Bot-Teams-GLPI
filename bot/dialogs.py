@@ -23,9 +23,12 @@ _ASK_ATTACHMENT_MSG = (
 )
 
 _COLLECT_ATTACHMENT_MSG = (
-    "📎 **{first_name}**, agora ficou ainda mais fácil: você pode colar o arquivo direto no chat "
-    "(Ctrl+V) ou clicar no ícone de anexo (clipe) aqui embaixo para selecionar.\n\n"
-    "Pode enviar quantos precisar! Quando terminar de mandar tudo, é só digitar **'concluir'**."
+    "**{first_name}**, você pode colar o arquivo no chat (Ctrl+V) "
+    "ou clicar no ícone de anexo (clipe 📎) aqui embaixo.\n\n"
+    "**Como funciona:**\n\n"
+    "1️⃣ Envie todos os arquivos que precisar\n\n"
+    "2️⃣ Aguarde eu confirmar cada um\n\n"
+    "3️⃣ Quando terminar, digite **'concluir'**"
 )
 
 FLEXSMART_WARNING = (
@@ -173,7 +176,7 @@ class DynamicFormProcessor:
         if text_lower in ["contato", "suporte", "falar com alguém", "falar com alguem", "humano", "pessoa"]:
             return (
                 f"📞 **{first_name}**, se precisar falar com um atendente:\n\n"
-                f"• **Email:** suporte@compasi.com.br\n"
+                f"• **Email:** ti.externo@compasi.com.br\n"
                 f"• **Horário:** Seg-Sex, 8h às 18h\n\n"
                 f"Mas primeiro, posso tentar ajudar! O que você precisa?"
             )
@@ -347,7 +350,7 @@ class DynamicFormProcessor:
                             return await cls._finalize_session(turn_context, session, user_name)
                         return (
                             f"✅ Arquivo recebido! ({qtd} até agora)\n\n"
-                            f"Pode colar mais arquivos direto no chat (Ctrl+V) ou anexar pelo clipe📎. Se já enviou tudo, é só digitar **'concluir'**."
+                            f"Pode enviar mais (Ctrl+V ou clipe 📎) ou digitar **'concluir'** se já mandou tudo."
                         )
                     if text_lower in _DONE_WORDS:
                         return await cls._finalize_session(turn_context, session, user_name)

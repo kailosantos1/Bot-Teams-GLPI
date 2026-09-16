@@ -42,10 +42,59 @@ forms:
       - "erro no sistema"
       - "erro no erp"
     questions:
-      nome_usuario_sistema:
-        id: 41
-        label: "Nome de usuário do sistema"
+      tipo_atendimento:
+        id: 106
+        label: "Qual o tipo de atendimento você deseja?"
         required: true
+        options:
+          - "Liberação"
+          - "Outro"
+
+      qual_liberacao:
+        id: 107
+        label: "Qual Liberação?"
+        required: true
+        depends_on:
+          field: "tipo_atendimento"
+          value: "Liberação"
+        options:
+          - "Telas"
+          - "Outros"
+
+      qual_tela:
+        id: 108
+        label: "Qual tela?"
+        required: true
+        depends_on:
+          field: "qual_liberacao"
+          value: "Telas"
+
+      qual_liberacao_sistema:
+        id: 111
+        label: "Qual liberação será feita no sistema?"
+        required: true
+        depends_on:
+          field: "qual_liberacao"
+          value: "Outros"
+
+      liberacao_para_usuario:
+        id: 109
+        label: "A liberação é para qual usuário?"
+        required: true
+        depends_on:
+          field: "tipo_atendimento"
+          value: "Liberação"
+        options:
+          - "Usuario Atual"
+          - "Outro Usuario"
+
+      nome_usuario:
+        id: 110
+        label: "Qual o nome do usuário?"
+        required: true
+        depends_on:
+          field: "liberacao_para_usuario"
+          value: "Outro Usuario"
 
       descricao_problema:
         id: 42
@@ -76,6 +125,15 @@ forms:
         depends_on:
           field: "canal_contato"
           value: "Microsoft Teams"
+
+      urgencia:
+        id: 112
+        label: "Qual a urgência do chamado?"
+        required: true
+        options:
+          - "Baixa"
+          - "Média"
+          - "Alta"
 
   manutencao:
     id: 1
@@ -346,7 +404,6 @@ forms:
       - "liberar acesso"
       - "dar acesso"
       - "conceder acesso"
-      - "novo colaborador"
       - "colaborador novo"
       - "funcionario novo"
       - "funcionário novo"

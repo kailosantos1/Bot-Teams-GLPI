@@ -18,3 +18,4 @@ env/
 # Configurações de IDEs (VS Code / PyCharm)
 .vscode/
 .idea/
+*.spec

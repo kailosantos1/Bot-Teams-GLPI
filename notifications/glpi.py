@@ -1,11 +1,55 @@
 """Bounded GLPI reads using the existing requester authorization contract."""
 from datetime import datetime
+import re
 from identity.store import user_id
 from services.ticket_conversation import TicketConversation, AccessDenied
 from services.ticket_query import QueryError
 
 
 class NotificationQuery(TicketConversation):
+    def author_in_groups(self, author, group_ids):
+        """Direct Group_User rows only, GLPI 10.0.18 REST v1; no names/tree/cache.
+
+        Validate every page even after a match. An incomplete collection cannot
+        establish either membership or confirmed nonmembership.
+        """
+        author = user_id(author)
+        allowed = frozenset(user_id(group) for group in group_ids)
+        if not allowed:
+            return False
+        with self.session() as get:
+            offset, total, seen, groups = 0, None, set(), set()
+            while True:
+                response = get(f'/User/{author}/Group_User', {
+                    'range': f'{offset}-{offset + 49}', 'get_hateoas': 'false',
+                    'expand_dropdowns': 'false'})
+                rows = response.json()
+                content_range = response.headers.get('Content-Range')
+                # APIRest 10.0.18 omits Content-Range when totalcount == 0.
+                if (rows == [] and offset == 0 and response.status_code == 200
+                        and content_range in (None, '0--1/0', '0-0/0')):
+                    return False
+                match = re.fullmatch(r'(\d+)-(\d+)/(\d+)', content_range or '')
+                if not isinstance(rows, list) or not rows or not match:
+                    raise QueryError()
+                start, stop, count = map(int, match.groups())
+                if (start != offset or stop - start + 1 != len(rows)
+                        or count > self.MAX_ITEMS or stop >= count
+                        or total is not None and total != count):
+                    raise QueryError()
+                total = count
+                for row in rows:
+                    if not isinstance(row, dict):
+                        raise QueryError()
+                    relation_id = user_id(row.get('id'))
+                    if relation_id in seen or user_id(row.get('users_id')) != author:
+                        raise QueryError()
+                    seen.add(relation_id)
+                    groups.add(user_id(row.get('groups_id')))
+                offset += len(rows)
+                if offset == total:
+                    return bool(groups & allowed)
+
     def active_user(self, get, uid):
         r = get(f'/User/{user_id(uid)}', {'get_hateoas': 'false'}, missing=True)
         if r is None:

@@ -172,7 +172,9 @@ class NotificationStore(LinkStore):
             db.execute("UPDATE notification_events SET state='reserved',reservation=?,reserved_until=?,attempts=attempts+1,updated=? WHERE id=?", (token, now + 900, now, row['id']))
             return dict(db.execute('SELECT * FROM notification_events WHERE id=?', (row['id'],)).fetchone())
 
-    def transition(self, event, state, *, delay=0, receipt=None):
+    def transition(self, event, state, *, delay=0, receipt=None, classification_retry=False):
+        if classification_retry and state != 'pending':
+            raise ValueError('invalid_classification_retry')
         with self.connection() as db:
             db.execute('BEGIN IMMEDIATE')
             if state == 'submitting':
@@ -181,9 +183,11 @@ class NotificationStore(LinkStore):
                 if (not ref or not ref['enabled'] or ref['generation'] != event['generation']
                         or ref['revision'] != event['revision'] or not self._current(db, dict(ref))):
                     raise Conflict('activation_changed')
-            count = db.execute('''UPDATE notification_events SET state=?,due=?,updated=?,receipt=?
-                WHERE id=? AND reservation=? AND state IN ('reserved','submitting')''',
-                (state, time.time() + delay, time.time(), receipt, event['id'], event['reservation'])).rowcount
+            count = db.execute('''UPDATE notification_events SET state=?,due=?,updated=?,receipt=?,attempts=attempts-?
+                WHERE id=? AND reservation=? AND state IN ('reserved','submitting')
+                  AND (?=0 OR state='reserved')''',
+                (state, time.time() + delay, time.time(), receipt, int(classification_retry),
+                 event['id'], event['reservation'], int(classification_retry))).rowcount
             if count != 1:
                 raise Conflict('reservation_changed')
 

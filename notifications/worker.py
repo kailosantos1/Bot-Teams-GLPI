@@ -13,6 +13,11 @@ from services.ticket_query import QueryError
 from .capture import valid_reference
 
 
+class MembershipUnavailable(QueryError):
+    """Not classified yet; never consume a watermark or discard a queued event."""
+    pass
+
+
 class BudgetExceeded(QueryError):
     pass
 
@@ -100,6 +105,25 @@ class Worker:
         with self.store.connection() as db:
             return {r[0] for r in db.execute('SELECT followup_id FROM reply_operations WHERE followup_id IS NOT NULL')}
 
+    def eligible(self, row, uid, excluded, membership_cache=None):
+        def membership(author, groups):
+            try:
+                if membership_cache is not None and author in membership_cache:
+                    return membership_cache[author]
+                result = self.query.author_in_groups(author, groups)
+                if type(result) is not bool:
+                    raise QueryError()
+                if membership_cache is not None:
+                    membership_cache[author] = result
+                return result
+            except BudgetExceeded:
+                raise
+            except Exception:
+                # Even HTTP 403/404 here is not a Teams reference failure and
+                # cannot prove that the author has no group membership.
+                raise MembershipUnavailable() from None
+        return self.policy.eligible(row, uid, excluded, membership)
+
     def observe(self):
         count = 0
         excluded = self.exclusions()
@@ -119,7 +143,11 @@ class Worker:
                     self.guard()
                     rows = self.query.snapshot(ref['uid'], ticket['id'])
                     ids = {user_id(row['id']) for row in rows}
-                    eligible = {user_id(row['id']) for row in rows if self.policy.eligible(row, ref['uid'], excluded)}
+                    # Reuse only within this complete ticket snapshot. Delivery
+                    # always performs fresh reads, including before_send.
+                    membership_cache = {}
+                    eligible = {user_id(row['id']) for row in rows
+                                if self.eligible(row, ref['uid'], excluded, membership_cache)}
                     self.guard()
                     self.store.observe(ref, ticket['id'], ids, eligible, self.owner)
             except AccessDenied:
@@ -161,6 +189,7 @@ class Worker:
 
     async def deliver(self, event):
         submitting = False
+        membership_in_progress = False
         ref = None
         async def finish(state, **kwargs):
             await asyncio.to_thread(self.store.transition, event, state, **kwargs)
@@ -173,12 +202,12 @@ class Worker:
                 return 0
             ticket, row = await asyncio.to_thread(self.query.notification, ref['uid'], event['ticket'], event['followup'])
             excluded = await asyncio.to_thread(self.exclusions)
-            if not self.policy.eligible(row, ref['uid'], excluded):
+            if not await asyncio.to_thread(self.eligible, row, ref['uid'], excluded):
                 await finish('discarded')
                 return 0
             reference = json.loads(ref['reference'])
             async def before_send():
-                nonlocal submitting
+                nonlocal submitting, membership_in_progress
                 await asyncio.to_thread(self.guard)
                 if not await asyncio.to_thread(self.store.has_lease, self.owner):
                     raise Conflict('lease_lost')
@@ -187,7 +216,10 @@ class Worker:
                 # Recheck after connector/token preparation, immediately before send.
                 _, latest = await asyncio.to_thread(self.query.notification, ref['uid'], event['ticket'], event['followup'])
                 excluded_now = await asyncio.to_thread(self.exclusions)
-                if not self.policy.eligible(latest, ref['uid'], excluded_now):
+                membership_in_progress = True
+                allowed = await asyncio.to_thread(self.eligible, latest, ref['uid'], excluded_now)
+                membership_in_progress = False
+                if not allowed:
                     raise AccessDenied()
                 if not await asyncio.to_thread(self.store.has_lease, self.owner):
                     raise Conflict('lease_lost')
@@ -199,9 +231,21 @@ class Worker:
             return int(bool(receipt))
         except AccessDenied:
             await finish('discarded')
+        except (MembershipUnavailable, BudgetExceeded):
+            # A failed classification is not a send attempt. Refund only while
+            # reserved, atomically with pending, so reserve's five-attempt cap
+            # cannot terminate a membership outage. Never refund after the fence.
+            await finish('uncertain' if submitting else 'pending',
+                         classification_retry=not submitting,
+                         delay=min(3600, 30 * 2 ** min(event['attempts'] - 1, 7)))
         except Exception as error:
             status = getattr(getattr(error, 'response', None), 'status_code', None)
-            if status in (400, 401, 403, 404, 410):
+            if isinstance(error, asyncio.TimeoutError) and membership_in_progress and not submitting:
+                # wait_for may cancel before_send while its membership thread is
+                # still reading. No send fence was crossed; retain classification.
+                await finish('pending', classification_retry=True,
+                             delay=min(3600, 30 * 2 ** min(event['attempts'] - 1, 7)))
+            elif status in (400, 401, 403, 404, 410):
                 await finish('rejected')
                 if status in (403, 404, 410) and ref:
                     await asyncio.to_thread(self.store.disable, ref['tenant'], ref['object_id'])

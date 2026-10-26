@@ -8,19 +8,21 @@ Implementação opt-in, **desabilitada por padrão**, sem homologação real. Ma
 
 Falha de registro não impede menu/abertura; tenta desabilitar e remover a referência daquele destinatário. Se o próprio banco estiver indisponível, a falha de armazenamento também impede o worker de autorizar envios pelo banco. Não se promete gravar uma revogação enquanto o disco não aceita escritas; restaure o armazenamento antes de retomar o processo. O caminho legado não ganha prova de identidade nova.
 
-A primeira política de suporte é uma **lista administrativa de IDs GLPI exatos** (`NOTIFICATIONS_SUPPORT_IDS`). Não há inferência por nome, grupo, perfil aparente ou autor diferente do requerente. A administração precisa confirmar que os IDs pertencem a contas humanas do suporte autorizadas a gerar avisos. Sem lista válida, o mecanismo inteiro fica bloqueado. `NOTIFICATIONS_INTEGRATION_IDS` é obrigatória, disjunta do suporte e deve incluir a conta de `GLPI_USER_TOKEN` e todas as contas usadas por automações/notas do bot. Essa correspondência administrativa precisa ser homologada; o programa não a deduz do token. IDs de acompanhamentos com recibo em `reply_operations` também são excluídos. A exclusão não depende de “Origem: Teams”. O autor igual ao destinatário é sempre excluído.
+A política de autores usa **IDs exatos de grupos GLPI**, em `NOTIFICATIONS_SUPPORT_GROUP_IDS`. O autor deve ter associação atual e direta a pelo menos um grupo configurado; nomes de grupos não são usados na decisão. Não há busca parcial ou inclusão de subgrupos. A variável antiga `NOTIFICATIONS_SUPPORT_IDS` era uma lista de usuários: foi removida de Settings e não é reinterpretada, exigida ou convertida em grupos. Somente a lista antiga não habilita notificações. A configuração nova precisa ser válida e não vazia.
+
+`NOTIFICATIONS_INTEGRATION_IDS` permanece uma lista obrigatória de **usuários** da integração/automações, incluindo a conta de `GLPI_USER_TOKEN`. Integrações nunca geram avisos, mesmo se integrarem grupos permitidos; o destinatário e acompanhamentos com recibo em `reply_operations` também são excluídos antes de consultar grupos. A exclusão não depende de texto “Origem: Teams”. IDs numéricos de grupo e usuário são namespaces distintos; coincidência numérica entre as duas listas não é conflito. Os grupos qualificam **somente os autores**: não autorizam destinatários nem substituem requerente individual, identidade, vínculo, revisão, conversa pessoal e demais revalidações.
 
 São elegíveis apenas acompanhamentos `ITILFollowup` do ticket exato, `itemtype=Ticket`, `items_id` exato, `is_private` inteiro 0 ou string "0", autor permitido e não excluído. Bool, ausência e privacidade desconhecida não são públicos. Se existir `is_deleted`, deve ser explicitamente zero. Registro excluído por DELETE/404 não é enviado. Não se usam tarefas, logs, anexos, timeline bruta ou mudanças de status como gatilhos.
 
-Antes de enviar, o worker consulta usuário ativo/não excluído, ticket e relações completas `Ticket_User`, exigindo requerente individual type=1 e status 1–4/não excluído; técnico, observador e grupo não concedem acesso. Reconsulta `/ITILFollowup/{id}` e verifica tipo, pai, publicidade, autor e exclusões. Depois da preparação do conector Teams, repete essa leitura imediatamente antes do envio e verifica novamente referência, vínculo/revisão/geração e lease. A transição durável para `submitting` também confere o vínculo no SQLite. Indisponibilidade nunca concede acesso. Existe a janela inerente entre a última leitura e a ação externa; GLPI/SQLite/Teams não formam transação distribuída.
+Antes de enviar, o worker consulta usuário ativo/não excluído, ticket e relações completas `Ticket_User`, exigindo requerente individual type=1 e status 1–4/não excluído; técnico, observador e grupo não concedem acesso. Reconsulta `/ITILFollowup/{id}` e verifica tipo, pai, publicidade, autor e exclusões, além de consultar novamente a associação autor → grupos. Depois da preparação do conector Teams, repete essas leituras, incluindo a associação do autor a grupos, imediatamente antes do envio e verifica novamente referência, vínculo/revisão/geração e lease. A transição durável para `submitting` também confere o vínculo no SQLite. Indisponibilidade nunca concede acesso. Existe a janela inerente entre a última leitura e a ação externa; GLPI/SQLite/Teams não formam transação distribuída.
 
 O worker usa vínculos/referências persistidos e `continue_conversation` do SDK com a aplicação configurada, sem fabricar uma atividade recebida autenticada nem chamar o resolver de atividades em segundo plano. O contexto de continuação do próprio SDK é exclusivamente de saída.
 
 ## Observação, primeira linha de base e limites
 
-Consultas periódicas usam os mesmos filtros/revalidações de requerente e status de `TicketQuery`; não há varredura da base inteira nem fallback sem filtro. Referência do contrato GLPI REST v1: **10.0.18**, como nas etapas anteriores. Novas leituras: usuário exato, coleção `/Ticket/{id}/ITILFollowup` e acompanhamento exato `/ITILFollowup/{id}`. A versão implantada, o campo `date_creation` e esses contratos ainda precisam de homologação.
+Consultas periódicas usam os mesmos filtros/revalidações de requerente e status de `TicketQuery`; não há varredura da base inteira nem fallback sem filtro. Referência do contrato GLPI REST v1: **10.0.18**, como nas etapas anteriores. Leituras: usuário exato, coleção `/Ticket/{id}/ITILFollowup`, acompanhamento exato `/ITILFollowup/{id}` e associação `/User/{author_id}/Group_User`. A versão implantada, o campo `date_creation` e esses contratos ainda precisam de homologação.
 
-A linha de base é **por destinatário, geração e ticket**. A primeira leitura completa registra o maior ID de acompanhamento, incluindo privados/autores não elegíveis, e não cria avisos. Uma leitura falha, duplicada, com pai incorreto, paginação incompleta, total inconsistente ou limite excedido não estabelece a linha de base. Chamados novos na observação também recebem linha de base sem histórico. Uma lista completa que deixa de conter um ticket remove seu marco; se ele voltar, recebe nova linha de base.
+A linha de base é **por destinatário, geração e ticket**. A primeira leitura completa registra o maior ID de acompanhamento, incluindo privados/autores não elegíveis, e não cria avisos. Uma leitura falha, duplicada, com pai incorreto, paginação incompleta, total inconsistente ou limite excedido não estabelece a linha de base. A classificação por grupos de todos os acompanhamentos candidatos do ticket também deve terminar antes da transação: qualquer falha deixa o marco anterior intacto, sem fila parcial. Na primeira ativação, uma falha não cria baseline; a primeira leitura completa posterior continua sem envio de histórico. Ausência confirmada de associação classifica como não elegível e permite avançar o marco. Entrar num grupo depois não reproduz eventos já classificados. Chamados novos na observação também recebem linha de base sem histórico. Uma lista completa que deixa de conter um ticket remove seu marco; se ele voltar, recebe nova linha de base.
 
 Leituras posteriores consideram somente IDs maiores que o marco. A ordenação é por ID crescente; os IDs devem ser crescentes e não reutilizados na instância GLPI. `date_creation` é exigida/validada, mas o relógio local não decide o que é novo. Edição de acompanhamento existente e privado que vira público não geram aviso retroativo. Não há snapshot transacional do GLPI: mensagens incluídas na leitura inicial são absorvidas silenciosamente; as que só aparecem na próxima leitura, com ID maior, podem gerar aviso. Inserções concorrentes/paginação instável podem exigir nova tentativa; inserção tardia com ID menor que um marco já observado não tem garantia de detecção. Homologar especialmente importações, restaurações e eventual reutilização de IDs; não usar esse mecanismo sobre uma base restaurada mantendo marcos incompatíveis.
 
@@ -41,9 +43,34 @@ Migração transacional incremental SQLite v1/v2 → **v3**, sem alterar víncul
 | uncertain | Entrega possivelmente realizada; **sem repetição automática** |
 | rejected / failed / discarded | Rejeição confirmada, limite atingido ou autorização/ativação inválida |
 
-Reservas `reserved` abandonadas voltam a pending; `submitting` abandonadas ficam uncertain depois de quinze minutos. Isso trata queda após envio e antes da confirmação local sem duplicar cegamente. Falhas comprovadamente anteriores à entrega recebem backoff 30/60/120/240 s, até cinco reservas; 429 confirmado respeita Retry-After numérico ou data HTTP (mínimo 1 s, máximo 24 h). 400/401/403/404/410 confirmados encerram o evento; 403/404/410 também desabilitam a referência, exigindo retomada administrativa. Falhas depois do marcador, incluindo timeout, 5xx ou recibo ausente, ficam uncertain. Não há reconciliação por texto, nem comando de reenvio cego de uncertain, nem promessa de entrega exatamente uma vez. Um aviso pode não ter confirmação e pode ter sido entregue.
+Reservas `reserved` abandonadas voltam a pending; `submitting` abandonadas ficam uncertain depois de quinze minutos. Isso trata queda após envio e antes da confirmação local sem duplicar cegamente. Falhas comprovadamente anteriores à entrega recebem backoff 30/60/120/240 s, até cinco tentativas contabilizadas; 429 confirmado respeita Retry-After numérico ou data HTTP (mínimo 1 s, máximo 24 h). 400/401/403/404/410 confirmados encerram o evento; 403/404/410 também desabilitam a referência, exigindo retomada administrativa. Falhas depois do marcador, incluindo timeout, 5xx ou recibo ausente, ficam uncertain. Não há reconciliação por texto, nem comando de reenvio cego de uncertain, nem promessa de entrega exatamente uma vez. Um aviso pode não ter confirmação e pode ter sido entregue.
 
 Somente um processo dedicado obtém o lease SQLite de quinze minutos. Outro processo retorna `busy` sem consultar GLPI/enviar. Parada normal libera o lease; após SIGKILL aguardar vencimento. Reservas têm recuperação independente. Antes de novas chamadas, de confirmar observação e de enviar, o dono precisa continuar válido. Um processo antigo preso numa leitura pode sobreviver ao vencimento, mas não recebe permissão para confirmar observação/enviar após perder o lease. Não apagar manualmente lease/reservas para forçar recuperação. Premissa: instância única, SQLite em disco local persistente, relógio operacional correto; não há suporte a réplicas distribuídas/NFS.
+
+## Contrato de associação do autor
+
+Referência fixa **GLPI 10.0.18 REST v1**, não uma confirmação da versão instalada:
+
+- [API REST, Get sub items](https://github.com/glpi-project/glpi/blob/10.0.18/apirest.md#get-sub-items): `GET /User/{author_id}/Group_User`, com `range`, `get_hateoas=false` e `expand_dropdowns=false`.
+- [Group_User](https://github.com/glpi-project/glpi/blob/10.0.18/src/Group_User.php): relação User/Group com chaves `users_id` e `groups_id`, sem expansão da árvore. Validam-se os IDs de relação e do autor e IDs de grupo positivos.
+- [Roteamento/paginação APIRest](https://github.com/glpi-project/glpi/blob/10.0.18/src/Api/APIRest.php): subitem filtra pelo pai; coleção usa `Content-Range` e 200/206. Quando o total é zero, essa implementação omite o cabeçalho. Só `200` com lista vazia na primeira página e cabeçalho ausente ou zero explícito comprova coleção vazia.
+
+Todas as páginas são lidas e validadas, mesmo se a primeira já contiver grupo permitido. Rejeitam-se total variável, IDs repetidos, autor divergente, campos ausentes/expandidos, página faltante, corpo inválido e mais de 200 relações. Erro HTTP, timeout, orçamento esgotado ou resposta incompleta nunca equivalem a ausência confirmada. A leitura usa sessões/timeout/orçamento/sem redirects existentes e encerra a sessão em finally. Não são feitas alterações GLPI.
+
+Associações repetidas de um autor são reutilizadas somente dentro do mesmo snapshot completo de um ticket, para evitar repetir GETs para cada mensagem histórica. Não há cache entre tickets, ciclos, pré-validação de entrega e verificação imediatamente anterior ao envio. As leituras bloqueantes ficam em threads, sem transações SQLite durante HTTP; entram no orçamento do worker. Muitos autores/grupos podem atingir os limites e adiar o ticket inteiro, sem avançar parcialmente o marco. Não existe snapshot transacional entre páginas ou entre GLPI e Teams.
+
+Na entrega, associação ausente confirmada descarta o evento; falha de associação, inclusive HTTP 401/403/404, mantém pending com backoff e referência preservada. Isso não é uma rejeição Teams. A reserva é devolvida atomicamente ao contador de tentativas somente antes de `submitting`; falhas de classificação não esgotam as cinco tentativas de envio. Pausa/revogação/perda de autorização continuam descartando; recibo incerto continua sem reenvio. A retenção existente é por tempo desde a última transição: retries ativos atualizam esse tempo; não há prazo absoluto novo para encerrar uma indisponibilidade persistente. Monitore pendências e restaure permissões/disponibilidade.
+
+## Grupos: configuração e migração
+
+1. Na interface GLPI, entre em **Administração → Grupos** e localize os nomes “T.I” e “FlexSmart”. Nomes iguais podem existir em entidades diferentes: confirme a entidade e a ficha administrativa correta.
+2. Abra cada grupo e obtenha seu ID numérico interno, pela coluna ID da lista (habilite-a se necessário) ou parâmetro `id` da URL da ficha. Não use ID de usuário, perfil, entidade ou chamado. Não há valores predefinidos para esses dois grupos neste projeto.
+3. Na ficha, confira as associações diretas dos autores humanos. Associação somente a subgrupo não basta: configure explicitamente o ID do subgrupo se essa for uma decisão administrativa aprovada. Associações LDAP/dinâmicas contam apenas quando presentes como relação direta em `Group_User`.
+4. Durante uma janela operacional autorizada, pare o processo dedicado. Substitua a variável antiga por `NOTIFICATIONS_SUPPORT_GROUP_IDS`, com os IDs de grupos conferidos separados por vírgulas. Não copie os IDs antigos. Preserve `NOTIFICATIONS_INTEGRATION_IDS` com IDs de usuários de todas as automações e da conta do token, mesmo que sejam membros dos grupos selecionados.
+5. Aplique a configuração ao bot e ao worker de forma consistente e reinicie pelo procedimento operacional existente. Não apague banco, fila, marcos ou vínculos. Não há alteração de schema nesta correção. Eventos já pendentes serão reclassificados pela política atual na entrega; eventos antigos já classificados não são reproduzidos. Uma configuração ausente bloqueia notificações, preservando abertura/consulta/resposta.
+6. Homologue, em etapa autorizada, a leitura completa de `Group_User` com as permissões/entidades reais do token. A API pode limitar visibilidade; não declare ausência definitiva com base numa conta sem permissões adequadas. Este código depende de coleções completas e trata erros/formatos parciais como indisponibilidade, sem fallback por nomes.
+
+Nenhuma chamada real foi feita para localizar os IDs. `tools.notifications once/run`, inclusive `--simulate`, consultam GLPI quando executados com configuração real; simulação apenas evita envio Teams. Não use esses comandos como teste offline.
 
 ## Configuração e comandos
 
@@ -51,12 +78,12 @@ Novos campos de Settings, sem dependências novas:
 
 ```dotenv
 NOTIFICATIONS_ENABLED=false
-NOTIFICATIONS_SUPPORT_IDS=7,8
-NOTIFICATIONS_INTEGRATION_IDS=99
+NOTIFICATIONS_SUPPORT_GROUP_IDS=
+NOTIFICATIONS_INTEGRATION_IDS=
 NOTIFICATIONS_INTERVAL=60
 ```
 
-IDs acima são fictícios. Ativar exige `NOTIFICATIONS_ENABLED=true`, listas válidas e as configurações existentes: `MICROSOFT_APP_ID`, `MICROSOFT_APP_PASSWORD`, `MICROSOFT_APP_TENANT_ID`, `IDENTITY_ALLOWED_TENANT_ID`, `IDENTITY_DB_PATH`, `GLPI_URL`, `GLPI_APP_TOKEN`, `GLPI_USER_TOKEN`. Não remover credenciais compartilhadas para pausar notificações. Nenhum valor real de segredo foi lido/documentado nesta etapa.
+Preencha as duas listas com os IDs reais conferidos; valores vazios mantêm o mecanismo bloqueado. Ativar exige `NOTIFICATIONS_ENABLED=true`, listas válidas e as configurações existentes: `MICROSOFT_APP_ID`, `MICROSOFT_APP_PASSWORD`, `MICROSOFT_APP_TENANT_ID`, `IDENTITY_ALLOWED_TENANT_ID`, `IDENTITY_DB_PATH`, `GLPI_URL`, `GLPI_APP_TOKEN`, `GLPI_USER_TOKEN`. Não remover credenciais compartilhadas para pausar notificações. Nenhum valor real de segredo foi lido/documentado nesta etapa.
 
 Após backup e homologação autorizada, configurar o servidor e o processo dedicado de forma consistente, aprovar vínculos e pedir que a pessoa consulte seus chamados em conversa pessoal. Isso captura/ativa sua referência; o ciclo seguinte estabelece linhas de base. O banco precisa existir: não se inventam vínculos nem se cria banco administrativo automaticamente no worker. A primeira operação com banco existente migra o schema.
 
@@ -132,7 +159,7 @@ Testes executados com o venv/SDK instalado, SQLite temporário, mocks e bloqueio
 
 - Backup/permissões/disco persistente, migração v2→v3 no servidor e rotina de limpeza; proibir processos antigos limitados a schema v2.
 - Tenant/aplicação/JWT/TeamsInfo reais, vínculo único, conversa pessoal, captura, mudança da referência, app removido e reinstalado.
-- Confirmar IDs humanos de suporte e **todos** os IDs da integração/automações, incluindo mudanças futuras de token. Não habilitar com listas presumidas.
+- Confirmar IDs dos grupos T.I/FlexSmart, entidades e associações diretas atuais de seus usuários; confirmar **todos** os IDs de usuários da integração/automações, incluindo mudanças futuras de token. Não habilitar com listas presumidas.
 - GLPI implantado: versão, permissões/entidades, filtros requerente/status, coleções vazias/paginação, ITILFollowup exato, `date_creation`, ordenação/crescimento/não reutilização de IDs e exclusão/privacidade.
 - Primeira linha de base e mensagens simultâneas, privado→público sem retroativo, edição sem novo aviso, chamados novos/reabertos e perda do requerente.
 - Isolamento A/B e papéis técnico/observador/grupo; revogação/substituição/reaprovação; vínculo/usuário/ticket/mensagem alterados antes do envio.
@@ -141,3 +168,15 @@ Testes executados com o venv/SDK instalado, SQLite temporário, mocks e bloqueio
 - Regressão real dos três formulários, anexos e Formcreator; os testes locais não substituem essa validação.
 
 O transporte dedicado também desativa explicitamente as retentativas automáticas do msrest e redirecionamentos, com timeout HTTP de 5 s, antes do marcador de envio. Isso foi conferido na configuração real do ConnectorClient em teste com envio mockado; a política da fila é a única responsável por decidir nova tentativa. A configuração não altera o adapter da abertura, pois o processo dedicado compõe seu próprio adapter.
+
+## Verificação offline da política por grupos
+
+Na raiz do projeto, com o venv existente:
+
+```sh
+venv/bin/python -m tests.run_offline_suite
+```
+
+O runner bloqueia globalmente Requests, DNS, conexões/sockets e aiohttp antes de descobrir os testes; os contratos usam respostas simuladas e SQLite temporário. Não use `tools.notifications --simulate` para substituir esse teste: esse comando consulta o GLPI configurado.
+
+A revisão por grupos inclui testes de permissão/negação, múltiplos grupos e páginas, erros HTTP e respostas incompletas, marcos sem avanço em falha, revalidação e timeout antes do envio, pendências após indisponibilidade prolongada, integração no grupo permitido, exclusão de recibos do bot e isolamento A/B. Os testes anteriores são mantidos com fixtures atualizadas para IDs de grupos. Nenhuma homologação real é inferida desses testes.

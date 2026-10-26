@@ -16,6 +16,7 @@ query = TicketQuery(settings.GLPI_URL, settings.GLPI_APP_TOKEN, settings.GLPI_US
 logger = logging.getLogger('bot.ticket_query')
 TTL = 300
 DENIED = 'Não consegui confirmar seu acesso aos chamados. Entre em contato com o suporte de TI.'
+LINK_DENIED = 'Não consegui vincular sua conta aos chamados. Entre em contato com o suporte de TI.'
 ERROR = 'Não consegui consultar seus chamados agora. Tente novamente em instantes.'
 STALE = 'A lista expirou ou mudou. Atualize a lista.'
 UNAVAILABLE = 'Esse chamado não está disponível para consulta. Atualize a lista.'
@@ -85,7 +86,9 @@ async def handle(context, text):
     if result is None or result.code != 'ok' or result.identity is None:
         log_identity_failure(result)
         await reset(context)
-        return True, card(DENIED, '', [('0', 'Voltar ao menu')])
+        linking_failure = getattr(settings, 'IDENTITY_AUTO_LINK_ENABLED', False) is True or result is not None and result.code in {
+            'email_missing', 'email_invalid', 'email_no_match', 'email_ambiguous', 'email_changed', 'link_conflict', 'auto_link_unavailable'}
+        return True, card(LINK_DENIED if linking_failure else DENIED, '', [('0', 'Voltar ao menu')])
     binding = [result.identity.tenant_id, result.identity.object_id, result.glpi_user_id,
                activity.conversation.id, activity.from_property.id]
     valid = state.get('binding') == binding and state.get('expires', 0) > time.time()

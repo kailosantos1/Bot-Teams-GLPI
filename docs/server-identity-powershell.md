@@ -1,3 +1,5 @@
+> Alternativa nova e opcional ao cadastro individual pela CLI: [vínculo automático e PowerShell](identity-auto-link.md). `IDENTITY_AUTO_LINK_ENABLED=false` mantém o comportamento manual deste roteiro.
+
 # Homologação: identidade no servidor e apresentação no Teams
 
 Procedimento para execução humana no servidor. Nenhum comando desta página foi

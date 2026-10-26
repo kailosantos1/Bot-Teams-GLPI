@@ -27,7 +27,7 @@ Endpoints: `POST /api/messages`, `GET /health` e `GET /api/status`. Saúde HTTP 
 
 ## Vínculos e manutenção
 
-Para consulta/resposta, configure `IDENTITY_ALLOWED_TENANT_ID`, inicialize o banco e aprove administrativamente a correspondência exata entre tenant/object ID do Entra e usuário GLPI ativo. Nome de exibição e e-mail digitado não comprovam identidade. Tenant permitido vazio desabilita esse caminho; abertura legada continua independente do vínculo.
+Para consulta/resposta, configure `IDENTITY_ALLOWED_TENANT_ID` e inicialize o banco existente no disco persistente. O padrão exige vínculo administrativo entre tenant/object ID do Entra e usuário GLPI ativo; opcionalmente, a TI pode habilitar a política automática por e-mail descrita abaixo. Nome de exibição e e-mail digitado não comprovam identidade. Tenant permitido vazio desabilita esse caminho; abertura legada continua independente do vínculo.
 
 ```sh
 venv/bin/python -m tools.identity_links init
@@ -36,7 +36,7 @@ venv/bin/python -m tools.identity_links revoke --help
 venv/bin/python -m tools.identity_links replace --help
 ```
 
-`create` e `replace` consultam o GLPI real. `get` e `audit` inspecionam vínculos; `revoke` revoga o vínculo. Use os parâmetros exibidos por `--help`, com IDs reais conferidos e referência da aprovação. Não há criação automática de vínculos.
+`create` e `replace` consultam o GLPI real. `get` e `audit` inspecionam vínculos; `revoke` revoga o vínculo. Use os parâmetros exibidos por `--help`, com IDs reais conferidos e referência da aprovação. Com `IDENTITY_AUTO_LINK_ENABLED=false` (padrão), não há criação automática de vínculos. A CLI continua disponível para exceções, revogação e correção.
 
 Migrações incrementais estão no código e preservam vínculos/auditoria/operações existentes. Faça backup antes de atualizar; proteja banco, referências pessoais e backups por permissões do sistema. Não execute versões antigas incompatíveis com o esquema atualizado. O caminho padrão é `data/identity.sqlite3`.
 
@@ -50,6 +50,14 @@ venv/bin/python -m tools.notifications cleanup --db data/identity.sqlite3
 Respostas têm prazo absoluto de quinze minutos e metadados por sete dias. Notificações conservam eventos por sete dias e desabilitam referências sem captura autenticada por trinta dias; marcos ativos permanecem para evitar repetição de histórico. Limpeza depende da execução das rotinas e não apaga fisicamente páginas/backups. Envios de resultado incerto não são repetidos automaticamente.
 
 O utilitário administrativo legado `Extensoes/Cadastrar Emails/cadastrar_emails_glpi.py` também é preservado. Ele altera e-mails no GLPI em modo de escrita; não faz parte da inicialização do bot e não deve ser executado como teste.
+
+## Associação automática opcional no primeiro acesso
+
+`IDENTITY_AUTO_LINK_ENABLED=false` mantém o fluxo manual. Habilitar com `true` permite criar vínculo somente quando ele está ausente, usando exclusivamente o e-mail do membro retornado pela API autenticada do Teams após validar remetente, tenant permitido e conversa pessoal. A administração deve garantir e-mails coincidentes e cadastro/alteração desses endereços no GLPI exclusivamente pela TI, inclusive em integrações/autosserviço.
+
+A pesquisa GLPI é paginada, considera endereços adicionais e reconfirma igualdade exata (apenas espaços externos e caixa são normalizados). Exige um único usuário ativo/não excluído; UPN, nome, e-mail digitado/botão, primeiro resultado e respostas parciais não são alternativas. Não cria usuários nem altera e-mails. Vínculos existentes não são transferidos por mudança de e-mail; revogados não são recriados, e conflitos são negados. A CLI administrativa continua disponível para exceções.
+
+Após sucesso, a consulta continua diretamente à lista com todas as verificações de requerente. O mesmo resultado seguro alimenta notificações se já habilitadas, sem alterar sua ativação ou política de grupos. Para desabilitar novas associações, configure `false` e recarregue o serviço: vínculos existentes e auditoria permanecem. Confira [contrato, exceções e instruções PowerShell](docs/identity-auto-link.md) antes de habilitar; não altere nem apague o banco para fazer a consulta passar.
 
 ## Notificações opcionais
 

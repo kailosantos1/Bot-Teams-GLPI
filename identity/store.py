@@ -99,6 +99,27 @@ class LinkStore:
                 "SELECT * FROM audit WHERE tenant_id=? AND object_id=? ORDER BY id",
                 (guid(tenant), guid(object_id)))]
 
+    def create_automatic(self, tenant, object_id, glpi_user_id):
+        """Create only; concurrent equivalent success is safe, never replace/revive.
+
+        change owns the transaction, unique index and audit insert. HTTP must
+        already have completed before entering here. No email is retained.
+        """
+        target = user_id(glpi_user_id)
+        try:
+            self.change('create', tenant, object_id, glpi_user_id=target,
+                        operator='system:teams-email-auto-link',
+                        reference='policy:authenticated-microsoft-email-v1')
+        except Conflict:
+            row = self.get(tenant, object_id)
+            if not row or row['status'] != 'active' or row['glpi_user_id'] != target:
+                raise
+            return row
+        row = self.get(tenant, object_id)
+        if not row or row['status'] != 'active' or row['glpi_user_id'] != target:
+            raise Conflict('link_changed')
+        return row
+
     def change(self, action, tenant, object_id, *, operator, reference,
                glpi_user_id=None, expected_user_id=None):
         tenant, object_id = guid(tenant), guid(object_id)

@@ -3,6 +3,7 @@
 Instalada em main.py. dispatch aceita o adapter compartilhado do endpoint;
 process é a conveniência isolada, nunca deve ser chamada de um callback do SDK.
 """
+import asyncio
 from .service import IdentityResult, _AuthenticatedTurn, _PROOF
 from .store import guid
 
@@ -60,8 +61,9 @@ class IdentityIngress:
         async def authenticated(context):
             active = True
             cached_result = None
+            resolution_lock = asyncio.Lock()
 
-            async def resolve_identity():
+            async def resolve_once():
                 nonlocal cached_result
                 if not active or context.adapter is not adapter:
                     return IdentityResult('unauthenticated')
@@ -91,6 +93,12 @@ class IdentityIngress:
                     return cached_result
                 finally:
                     turn.live = False
+
+            async def resolve_identity():
+                # Concurrent consumers in one authenticated activity share the
+                # same Teams lookup, link decision and notification capture.
+                async with resolution_lock:
+                    return await resolve_once()
 
             try:
                 return await logic(context, resolve_identity)

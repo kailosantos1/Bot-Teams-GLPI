@@ -1,3 +1,5 @@
+> Associação automática opt-in por e-mail Microsoft autenticado: [identity-auto-link.md](identity-auto-link.md). Desabilitada por padrão; vínculos existentes/revogados permanecem protegidos. Esta política explícita substitui somente a afirmação histórica de que nunca há associação automática.
+
 > Diagnóstico atual no servidor (PowerShell), configuração segura, inicialização preservando vínculos e códigos de log: [server-identity-powershell.md](server-identity-powershell.md). Os trechos preparatórios abaixo são registros históricos.
 
 > Etapa 5: o banco de vínculos passa a admitir schema v2, com operações persistentes de resposta, preservando links/auditoria por migração incremental. A identidade segura continua sendo resolvida a cada operação. Ver [ticket-conversation.md](ticket-conversation.md) para retenção, reserva de envio e homologação pendente.

@@ -2,7 +2,8 @@
 import asyncio
 from dataclasses import dataclass
 import sqlite3
-from .store import guid
+from .store import guid, Conflict
+from .email_lookup import normalize_email
 
 _PROOF = object()
 
@@ -38,10 +39,42 @@ async def _get_member(context, member_id):
 
 
 class IdentityService:
-    def __init__(self, store, glpi_reader, allowed_tenant):
+    def __init__(self, store, glpi_reader, allowed_tenant, *, auto_link_enabled=False, email_lookup=None):
         self.store = store
         self.glpi = glpi_reader
         self.allowed_tenant = allowed_tenant
+        self.auto_link_enabled = auto_link_enabled is True
+        self.email_lookup = email_lookup
+
+    async def _associate(self, identity):
+        if not isinstance(identity.email, str) or not identity.email.strip():
+            return IdentityResult('email_missing', identity)
+        try:
+            email = normalize_email(identity.email)
+        except ValueError:
+            return IdentityResult('email_invalid', identity)
+        if self.email_lookup is None:
+            return IdentityResult('auto_link_unavailable', identity)
+        first = await asyncio.to_thread(self.email_lookup.find, email)
+        if first.code != 'ok' or first.glpi_user_id is None:
+            return IdentityResult(first.code if first.code in {'email_no_match', 'email_ambiguous'} else 'auto_link_unavailable', identity)
+        # Repeat the entire exact uniqueness check before creating, not just the
+        # candidate's default address. New ambiguity or reassignment denies.
+        latest = await asyncio.to_thread(self.email_lookup.find, email)
+        if latest.code != 'ok':
+            return IdentityResult(latest.code if latest.code in {'email_no_match', 'email_ambiguous'} else 'auto_link_unavailable', identity)
+        if latest.glpi_user_id != first.glpi_user_id:
+            return IdentityResult('email_changed', identity)
+        check = await asyncio.to_thread(self.glpi.check, first.glpi_user_id)
+        if check.code != 'ok' or check.glpi_user_id != first.glpi_user_id:
+            return IdentityResult('email_changed' if check.code in {'glpi_missing', 'glpi_inactive', 'glpi_deleted'} else 'auto_link_unavailable', identity)
+        try:
+            return await asyncio.to_thread(self.store.create_automatic,
+                                          identity.tenant_id, identity.object_id, first.glpi_user_id)
+        except Conflict:
+            current = await asyncio.to_thread(self.store.get, identity.tenant_id, identity.object_id)
+            code = 'link_revoked' if current and current['status'] == 'revoked' else 'link_conflict'
+            return IdentityResult(code, identity)
 
     async def resolve(self, turn):
         if not isinstance(turn, _AuthenticatedTurn) or not turn.live:
@@ -80,13 +113,20 @@ class IdentityService:
                     or guid(member.tenant_id) != tenant):
                 return IdentityResult('identity_mismatch')
             identity = TeamsIdentity(tenant, object_id, sender.id,
-                                     member.email, member.user_principal_name)
+                                     getattr(member, 'email', None), getattr(member, 'user_principal_name', None))
         except (AttributeError, TypeError, ValueError):
             return IdentityResult('identity_missing')
         try:
             link = await asyncio.to_thread(self.store.get, tenant, object_id)
             if not link:
-                return IdentityResult('link_missing', identity)
+                if not self.auto_link_enabled:
+                    return IdentityResult('link_missing', identity)
+                try:
+                    link = await self._associate(identity)
+                except Exception:
+                    return IdentityResult('auto_link_unavailable', identity)
+                if isinstance(link, IdentityResult):
+                    return link
             if link['status'] != 'active':
                 return IdentityResult('link_revoked', identity)
             check = await asyncio.to_thread(self.glpi.check, link['glpi_user_id'])

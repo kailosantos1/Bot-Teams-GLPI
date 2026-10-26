@@ -14,13 +14,15 @@ from identity.ingress import IdentityIngress, _build_adapter
 from identity.service import IdentityService
 from identity.store import LinkStore
 from identity.glpi import GLPIUserReader
+from identity.email_lookup import GLPIEmailLookup
 
 app = FastAPI(title="Byte Bot de Chamados API")
 
 adapter, credential_provider, identity_key = _build_adapter(settings)
 identity_service = IdentityService(LinkStore(settings.IDENTITY_DB_PATH),
     GLPIUserReader(settings.GLPI_URL, settings.GLPI_APP_TOKEN, settings.GLPI_USER_TOKEN),
-    settings.IDENTITY_ALLOWED_TENANT_ID)
+    settings.IDENTITY_ALLOWED_TENANT_ID, auto_link_enabled=settings.IDENTITY_AUTO_LINK_ENABLED,
+    email_lookup=GLPIEmailLookup(settings.GLPI_URL, settings.GLPI_APP_TOKEN, settings.GLPI_USER_TOKEN))
 identity_ingress = IdentityIngress(settings, identity_service,
     adapter_bundle=(adapter, credential_provider, identity_key))
 

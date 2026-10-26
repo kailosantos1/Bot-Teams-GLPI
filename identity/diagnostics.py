@@ -7,6 +7,7 @@ FAILURE_CODES = frozenset({
     'unauthenticated', 'authentication_configuration', 'authentication_disabled',
     'authentication_failed', 'sdk_unavailable', 'wrong_channel', 'personal_only',
     'tenant_denied', 'identity_missing', 'identity_mismatch', 'teams_unavailable',
+    'email_missing', 'email_invalid', 'email_no_match', 'email_ambiguous', 'email_changed', 'link_conflict', 'auto_link_unavailable',
     'link_missing', 'link_revoked', 'link_changed', 'identity_unavailable',
     'glpi_missing', 'glpi_inactive', 'glpi_deleted', 'glpi_incomplete', 'glpi_unavailable',
 })

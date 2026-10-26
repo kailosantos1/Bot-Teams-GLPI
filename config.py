@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     GLPI_APP_TOKEN: str = ""
     GLPI_USER_TOKEN: str = ""
     IDENTITY_ALLOWED_TENANT_ID: str = ""
+    IDENTITY_AUTO_LINK_ENABLED: bool = False
     NOTIFICATIONS_ENABLED: bool = False
     NOTIFICATIONS_SUPPORT_GROUP_IDS: str = ""
     NOTIFICATIONS_INTEGRATION_IDS: str = ""

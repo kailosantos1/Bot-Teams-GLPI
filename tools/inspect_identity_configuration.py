@@ -23,6 +23,7 @@ def inspect(config):
             except (ValueError, TypeError, AttributeError):
                 state = 'invalid_uuid'
             lines.append(f'{name}: {state}')
+    lines.append('IDENTITY_AUTO_LINK_ENABLED: ' + ('enabled' if getattr(config, 'IDENTITY_AUTO_LINK_ENABLED', False) is True else 'disabled'))
     candidate = getattr(config, 'IDENTITY_DB_PATH', '')
     if not isinstance(candidate, str) or not candidate.strip():
         return lines + ['database: path_missing']

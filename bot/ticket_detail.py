@@ -44,14 +44,14 @@ async def details(context, result, binding, state, tid=None, offset=0):
     state['part'] = offset
     text = (f"🎫 Chamado #{tid} — {row['title'][:120]}\nSituação: {STATUS_LABELS[row['status']]}\n\n"
             f"📝 Solicitação inicial ({offset + 1}/{len(chunks)}):\n{chunks[offset]}\n\n"
-            '1 — Ver conversa\n2 — Responder chamado\n3 — Voltar aos meus chamados\n0 — Menu principal')
+            )
     actions = [('1', 'Ver conversa'), ('2', 'Responder chamado'), ('3', 'Voltar aos meus chamados'), ('0', 'Menu principal')]
     if offset:
         actions.append(('7', 'Trecho anterior'))
-        text += '\n7 — Trecho anterior'
+
     if offset + 1 < len(chunks):
         actions.append(('9', 'Ver mais'))
-        text += '\n9 — Ver mais'
+
     return await screen(context, state, text, actions)
 
 
@@ -67,12 +67,10 @@ async def history(context, result, state, offset=0):
     text = (f"💬 Conversa pública do chamado #{state['ticket']}\nMais recentes primeiro.\n\n"
             + (f'Página {offset + 1}/{len(chunks)}\n' + chunks[offset] if chunks else 'Este chamado ainda não tem mensagens públicas.'))
     actions = [('4', 'Voltar ao chamado'), ('8', 'Atualizar conversa'), ('3', 'Meus chamados'), ('0', 'Menu principal')]
-    text += '\n\n4 — Voltar ao chamado\n8 — Atualizar conversa\n3 — Meus chamados\n0 — Menu principal'
+
     if offset:
-        text += '\n7 — Página anterior'
         actions.append(('7', 'Página anterior'))
     if offset + 1 < len(chunks):
-        text += '\n9 — Mensagens anteriores / ver mais'
         actions.append(('9', 'Mensagens anteriores / ver mais'))
     return await screen(context, dict(state, part=offset), text, actions, view='history')
 
@@ -88,10 +86,10 @@ async def capture(context, state):
 async def confirmation(context, state, body, prefix=''):
     text = (prefix + 'Confira sua mensagem:\n' + passive(body)
             + '\n\nA prévia oculta endereços e neutraliza formatação; o texto digitado será registrado integralmente.'
-            + '\nDeseja enviar?\nDigite enviar, editar ou /cancelar-resposta.\n'
+            + '\nDeseja enviar?\nToque em uma opção ou digite o número.\n'
             'O autor nativo no GLPI será a conta da integração; o texto identificará a origem Teams.')
     return await screen(context, state, text,
-                        [('send', 'Enviar'), ('edit', 'Editar'), ('cancel', 'Cancelar')], view='confirm')
+                        [('send', '1 — Enviar'), ('edit', '2 — Editar'), ('cancel', '0 — Cancelar')], view='confirm')
 
 
 async def handle(context, raw_text, result, binding, state, payload):
@@ -114,7 +112,9 @@ async def handle(context, raw_text, result, binding, state, payload):
     except AccessDenied:
         await query_state_accessor.delete(context)
         from bot.ticket_consult import card
-        return card(UNAVAILABLE + '\n8 — Atualizar\n0 — Menu principal', '', [('8', 'Atualizar'), ('0', 'Menu principal')])
+        return card(UNAVAILABLE, '', [('8', 'Atualizar'), ('0', 'Menu principal')])
+    if view == 'confirm' and payload is None:
+        op = {'1': 'enviar', '2': 'editar', '0': '/cancelar-resposta'}.get(op, op)
     if view in {'capture', 'confirm'}:
         if payload is None and op == '/tentar-novamente':
             op = 'retry_view'
@@ -125,12 +125,12 @@ async def handle(context, raw_text, result, binding, state, payload):
         if state.get('draft'):
             draft = await asyncio.to_thread(reply_store.get_operation, state['draft'], binding, state['ticket'])
             if not draft or draft['state'] in {'expired', 'cancelled'} or draft['expires'] <= time.time():
-                return await screen(context, dict(state, draft=None), 'O rascunho expirou. Volte ao chamado para escrever novamente.\n4 — Voltar ao chamado', [('4', 'Voltar ao chamado')], view='result')
+                return await screen(context, dict(state, draft=None), 'O rascunho expirou. Volte ao chamado para escrever novamente.', [('4', 'Voltar ao chamado')], view='result')
         if draft and draft['state'] != 'ready' and op not in {'send', 'enviar'}:
             if draft['state'] == 'sent':
-                return await screen(context, state, f"✅ Sua mensagem foi enviada ao chamado #{state['ticket']}.\n1 — Atualizar conversa\n4 — Voltar ao chamado",
+                return await screen(context, state, f"✅ Sua mensagem foi enviada ao chamado #{state['ticket']}.",
                                     [('1', 'Atualizar conversa'), ('4', 'Voltar ao chamado')], view='result')
-            return await screen(context, state, UNCERTAIN + '\n1 — Atualizar conversa\n3 — Meus chamados',
+            return await screen(context, state, UNCERTAIN,
                                 [('1', 'Atualizar conversa'), ('3', 'Meus chamados')], view='uncertain')
         cancel = op == '/cancelar-resposta' or payload is not None and op == 'cancel'
         if cancel:
@@ -142,7 +142,7 @@ async def handle(context, raw_text, result, binding, state, payload):
                 return await capture(context, state)
             raw_text = raw_text.replace('\r\n', '\n').replace('\r', '\n')
             if not valid_reply(raw_text):
-                return await screen(context, state, f'Digite uma mensagem de 1 a {MAX_REPLY} caracteres. Ela não foi enviada.\n/cancelar-resposta — Cancelar', [('cancel', 'Cancelar')])
+                return await screen(context, state, f'Digite uma mensagem de 1 a {MAX_REPLY} caracteres. Ela não foi enviada.', [('cancel', 'Cancelar')])
             operation = await asyncio.to_thread(reply_store.create, binding, state['ticket'], raw_text)
             return await confirmation(context, dict(state, draft=operation), raw_text)
         if not draft:
@@ -150,7 +150,7 @@ async def handle(context, raw_text, result, binding, state, payload):
         if op in {'send', 'enviar'}:
             outcome = await asyncio.to_thread(ReplySender(reply_store, service).send, state['draft'], binding, state['ticket'])
             if outcome == 'sent':
-                return await screen(context, state, f"✅ Sua mensagem foi enviada ao chamado #{state['ticket']}.\n1 — Atualizar conversa\n4 — Voltar ao chamado\n0 — Menu principal",
+                return await screen(context, state, f"✅ Sua mensagem foi enviada ao chamado #{state['ticket']}.",
                                     [('1', 'Atualizar conversa'), ('4', 'Voltar ao chamado'), ('0', 'Menu principal')], view='result')
             if outcome == 'retry':
                 return await confirmation(context, state, draft['body'], 'Não consegui preparar o envio. Seu rascunho foi preservado.\n\n')
@@ -158,10 +158,10 @@ async def handle(context, raw_text, result, binding, state, payload):
                 await query_state_accessor.delete(context)
                 from bot.ticket_consult import card
                 return card(UNAVAILABLE, '', [('8', 'Atualizar lista'), ('0', 'Menu principal')])
-            return await screen(context, state, UNCERTAIN + '\n1 — Atualizar conversa\n3 — Meus chamados\n0 — Menu principal',
+            return await screen(context, state, UNCERTAIN,
                                 [('1', 'Atualizar conversa'), ('3', 'Meus chamados'), ('0', 'Menu principal')], view='uncertain')
         if draft['state'] != 'ready':
-            return await screen(context, state, UNCERTAIN + '\n1 — Atualizar conversa', [('1', 'Atualizar conversa')], view='uncertain')
+            return await screen(context, state, UNCERTAIN, [('1', 'Atualizar conversa')], view='uncertain')
         if op in {'edit', 'editar'}:
             await asyncio.to_thread(reply_store.cancel, state['draft'], binding, state['ticket'])
             return await capture(context, dict(state, draft=None))
@@ -190,5 +190,5 @@ async def handle(context, raw_text, result, binding, state, payload):
             return await details(context, result, binding, state, offset=state.get('part', 0) + (-1 if op == '7' else 1))
     if view == 'history' and op in {'7', '9'}:
         return await history(context, result, state, state.get('part', 0) + (-1 if op == '7' else 1))
-    return await screen(context, state, 'Opção inválida.\n4 — Voltar ao chamado\n3 — Meus chamados\n0 — Menu principal',
+    return await screen(context, state, 'Opção inválida.',
                         [('4', 'Voltar ao chamado'), ('3', 'Meus chamados'), ('0', 'Menu principal')])

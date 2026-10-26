@@ -25,10 +25,13 @@ def safe_title(title):
 
 
 def card(text, version, actions):
-    buttons = [CardAction(type='messageBack', title=label, text=action,
-                          display_text=label, value={'query': action, 'version': version})
-               for action, label in actions]
-    attachments = [_card_attachment(HeroCard(text=text if offset == 0 else 'Navegação',
+    buttons = []
+    for action, label in actions:
+        title = f'{action} — {label}' if action.isdigit() and not label.startswith(action + ' — ') else label
+        buttons.append(CardAction(type='messageBack', title=title, text=action,
+                                 display_text=title, value={'query': action, 'version': version}))
+    guidance = '\n\nToque em uma opção ou digite o número.' if any(action.isdigit() for action, _ in actions) else ''
+    attachments = [_card_attachment(HeroCard(text=text.rstrip() + guidance if offset == 0 else 'Navegação',
                     buttons=buttons[offset:offset + 5])) for offset in range(0, len(buttons), 5)]
     return Activity(type='message', text=text if not attachments else None, attachments=attachments)
 
@@ -78,7 +81,7 @@ async def handle(context, text):
         result = None
     if result is None or result.code != 'ok' or result.identity is None:
         await reset(context)
-        return True, card(DENIED + '\n\n0 — Voltar ao menu', '', [('0', 'Voltar ao menu')])
+        return True, card(DENIED, '', [('0', 'Voltar ao menu')])
     binding = [result.identity.tenant_id, result.identity.object_id, result.glpi_user_id,
                activity.conversation.id, activity.from_property.id]
     valid = state.get('binding') == binding and state.get('expires', 0) > time.time()
@@ -96,7 +99,7 @@ async def handle(context, text):
             # Keep draft references on recoverable read/storage failures; never log text.
             from bot.ticket_detail import screen
             actions = [('retry_view', 'Tentar novamente'), ('cancel', 'Cancelar resposta')] if state.get('view') in {'capture', 'confirm'} else [('8', 'Atualizar conversa'), ('4', 'Voltar ao chamado'), ('3', 'Meus chamados'), ('0', 'Menu principal')]
-            instructions = '\nUse Tentar novamente, /tentar-novamente ou /cancelar-resposta.' if state.get('view') in {'capture', 'confirm'} else '\n8 — Atualizar conversa\n4 — Voltar ao chamado\n3 — Meus chamados\n0 — Menu principal'
+            instructions = '\nUse Tentar novamente, /tentar-novamente ou /cancelar-resposta.' if state.get('view') in {'capture', 'confirm'} else ''
             return True, await screen(context, state, ERROR + instructions, actions)
     op = 'atualizar' if entry else text
     recovery = payload == {'query': '8', 'version': ''}
@@ -106,7 +109,7 @@ async def handle(context, text):
         if (not isinstance(payload, dict) or set(payload) != {'query', 'version'}
                 or not valid or payload['version'] != state.get('version')
                 or not isinstance(payload['query'], str)):
-            return True, card(STALE + '\n8 — Atualizar\n0 — Voltar ao menu', '', [('8', 'Atualizar'), ('0', 'Voltar ao menu')])
+            return True, card(STALE, '', [('8', 'Atualizar'), ('0', 'Voltar ao menu')])
         op = payload['query']
     op = {'8': 'atualizar', '9': 'proximos', '7': 'anteriores', '6': 'lista',
           'próximos': 'proximos'}.get(op, op)
@@ -117,23 +120,23 @@ async def handle(context, text):
         return True, build_menu_activity('')
     if not valid and op != 'atualizar':
         await reset(context)
-        return True, card(STALE + '\n8 — Atualizar\n0 — Voltar ao menu', '', [('8', 'Atualizar'), ('0', 'Voltar ao menu')])
+        return True, card(STALE, '', [('8', 'Atualizar'), ('0', 'Voltar ao menu')])
     try:
         if op.isascii() and op.isdigit() and 1 <= int(op) <= 5:
             page = state['ids']
             index = int(op) - 1
             if index >= len(page):
-                return True, card('Opção inválida.\n8 — Atualizar\n0 — Voltar ao menu', state['version'], [('8', 'Atualizar'), ('0', 'Voltar ao menu')])
+                return True, card('Opção inválida.', state['version'], [('8', 'Atualizar'), ('0', 'Voltar ao menu')])
             tid = page[index]
             from bot.ticket_detail import details
             from services.ticket_conversation import AccessDenied
             try:
                 return True, await details(context, result, binding, state, tid=tid)
             except AccessDenied:
-                return True, card(UNAVAILABLE + '\n8 — Atualizar\n0 — Voltar ao menu', state['version'],
+                return True, card(UNAVAILABLE, state['version'],
                                   [('8', 'Atualizar'), ('0', 'Voltar ao menu')])
         if op not in {'atualizar', 'proximos', 'anteriores', 'lista'}:
-            return True, card('Opção inválida.\n8 — Atualizar\n0 — Voltar ao menu', state.get('version', ''), [('8', 'Atualizar'), ('0', 'Voltar ao menu')])
+            return True, card('Opção inválida.', state.get('version', ''), [('8', 'Atualizar'), ('0', 'Voltar ao menu')])
         offset = state.get('offset', 0) if valid else 0
         if op == 'atualizar':
             offset = 0
@@ -150,14 +153,12 @@ async def handle(context, text):
         message = '📋 Seus chamados em andamento:\n\n' if items else '✅ Você não tem chamados em aberto no momento.\n\n'
         actions = []
         for i, item in enumerate(page, 1):
-            message += f"{i} — {safe_title(item['title'])}\nChamado #{item['id']} · {STATUS_LABELS[item['status']]}\n\n"
-            actions.append((str(i), f"{i} — Chamado #{item['id']}"))
+            actions.append((str(i), f"{i} — {safe_title(item['title'])} · Chamado #{item['id']} · {STATUS_LABELS[item['status']]}"))
         for op, label, present in [('7', 'Anteriores', offset > 0), ('9', 'Próximos', offset + 5 < len(items)),
                                    ('8', 'Atualizar', True), ('0', 'Voltar ao menu', True)]:
             if present:
-                message += f'{op} — {label}\n'
                 actions.append((op, label))
         return True, card(message, version, actions)
     except Exception:
         await reset(context)
-        return True, card(ERROR + '\n8 — Atualizar\n0 — Voltar ao menu', '', [('8', 'Atualizar'), ('0', 'Voltar ao menu')])
+        return True, card(ERROR, '', [('8', 'Atualizar'), ('0', 'Voltar ao menu')])

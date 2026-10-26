@@ -165,66 +165,26 @@ def parse_button_action(activity: Any) -> Optional[str]:
 # TEXTOS E CONSTRUTORES DE ATIVIDADES / CARTÕES
 # =====================================================================
 
-MENU_TEXT = (
-    "👋 Olá, {first_name}! Como posso ajudar?\n\n"
-    "1 — Abrir um chamado\n"
-    "2 — Consultar meus chamados\n\n"
-    "Toque em uma opção ou digite o número."
-)
-
+CHOICE_GUIDANCE = "Toque em uma opção ou digite o número."
+MENU_TEXT = "👋 {greeting} Como posso ajudar?\n\n" + CHOICE_GUIDANCE
 OPEN_TICKET_TEXT = (
     "📝 Vamos abrir seu chamado! Descreva o que você precisa.\n\n"
-    "Exemplos:\n"
-    "• Problema na impressora\n"
-    "• Problema no FlexSmart\n"
-    "• Cadastro de novo colaborador\n\n"
-    "0 — Voltar ao menu"
+    "Exemplos: problema na impressora, problema no FlexSmart ou cadastro de novo colaborador.\n\n"
+    "Para voltar, toque no botão ou digite 0."
 )
-
-CONSULT_TEXT = (
-    "Não consegui confirmar seu acesso aos chamados. Entre em contato com o suporte de TI.\n\n"
-    "0 — Voltar ao menu"
-)
-
-INTERRUPT_TEXT = (
-    "⚠️ **{first_name}**, você já tem um chamado em preenchimento (**{form_name}**).\n\n"
-    "O que deseja fazer?\n\n"
-    "• **Continuar preenchimento**\n"
-    "• **Cancelar preenchimento e ir ao menu**"
-)
-
+CONSULT_TEXT = "Não consegui confirmar seu acesso aos chamados. Entre em contato com o suporte de TI."
+INTERRUPT_TEXT = "⚠️ você já tem um chamado em preenchimento (**{form_name}**).\n\nO que deseja fazer? Toque em uma opção ou digite o número."
 UNIDENTIFIED_OPEN_TEXT = (
-    "❌ **{first_name}**, não consegui identificar sua solicitação.\n\n"
-    "Por favor, tente descrever com palavras como:\n"
-    "• **manutenção**, **impressora**, **computador**\n"
-    "• **FlexSmart**, **erro flex**\n"
-    "• **cadastro**, **admissão**\n\n"
-    "0 — Voltar ao menu"
+    "❌ não consegui identificar sua solicitação.\n\n"
+    "Tente descrever com palavras como manutenção, impressora, computador, FlexSmart, cadastro ou admissão."
 )
-
-INVALID_MENU_TEXT = (
-    "⚠️ Opção inválida. Escolha uma das opções:\n\n"
-    "1 — Abrir um chamado\n"
-    "2 — Consultar meus chamados\n\n"
-    "Toque em uma opção ou digite o número."
-)
-
-INVALID_CONSULT_TEXT = (
-    "⚠️ Opção inválida. Escolha uma das opções:\n\n"
-    "1 — Abrir um chamado\n"
-    "0 — Voltar ao menu"
-)
-
-INTERRUPT_INVALID_TEXT = (
-    "⚠️ **{first_name}**, você tem um chamado em andamento.\n\n"
-    "Por favor, escolha uma das opções:\n"
-    "• **Continuar preenchimento**\n"
-    "• **Cancelar preenchimento e ir ao menu**"
-)
+INVALID_MENU_TEXT = "⚠️ Opção inválida. Escolha uma das opções:\n\n" + CHOICE_GUIDANCE
+INVALID_CONSULT_TEXT = "⚠️ Opção inválida.\n\n" + CHOICE_GUIDANCE
+INTERRUPT_INVALID_TEXT = "⚠️ você tem um chamado em andamento. Toque em uma opção ou digite o número."
 
 
 def build_menu_activity(first_name: str) -> Activity:
-    text = MENU_TEXT.format(first_name=first_name)
+    text = MENU_TEXT.format(greeting=f"Olá, {first_name.strip()}!" if first_name and first_name.strip() and first_name != "Usuário" else "Olá!")
     card = HeroCard(
         text=text,
         buttons=[
@@ -269,8 +229,8 @@ def build_interrupt_activity(first_name: str, form_name: str, confirmation: str 
     card = HeroCard(
         text=text,
         buttons=[
-            _btn("Continuar preenchimento", "continuar", "continue_form", confirmation),
-            _btn("Cancelar preenchimento e ir ao menu", "cancelar preenchimento", "cancel_form_to_menu", confirmation),
+            _btn("1 — Continuar preenchimento", "1", "continue_form", confirmation),
+            _btn("2 — Cancelar preenchimento e ir ao menu", "2", "cancel_form_to_menu", confirmation),
         ],
     )
     return Activity(
@@ -325,8 +285,8 @@ def build_interrupt_invalid_activity(first_name: str, confirmation: str = None) 
     card = HeroCard(
         text=text,
         buttons=[
-            _btn("Continuar preenchimento", "continuar", "continue_form", confirmation),
-            _btn("Cancelar preenchimento e ir ao menu", "cancelar preenchimento", "cancel_form_to_menu", confirmation),
+            _btn("1 — Continuar preenchimento", "1", "continue_form", confirmation),
+            _btn("2 — Cancelar preenchimento e ir ao menu", "2", "cancel_form_to_menu", confirmation),
         ],
     )
     return Activity(

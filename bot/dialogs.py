@@ -332,6 +332,135 @@ class DynamicFormProcessor:
 
     @classmethod
     async def process_user_message(cls, turn_context, user_text: str, user_name: str):
+        """Render choices once and validate form buttons before legacy text handling."""
+        from bot.cards import Activity, HeroCard, CardAction, _card_attachment
+        activity = turn_context.activity
+        nav = await nav_state_accessor.get(turn_context, lambda: {})
+        ui = nav.get('form_ui', {})
+        activity_id = getattr(activity, 'id', None)
+        if activity_id and activity_id in ui.get('seen', []):
+            return 'Essa resposta já foi recebida. Use as opções atuais.'
+        session = await user_profile_accessor.get(turn_context, lambda: None)
+        payload = getattr(activity, 'value', None)
+        clicked = isinstance(payload, dict) and 'form_choice' in payload
+        binding = [getattr(activity, 'channel_id', None), getattr(activity.conversation, 'id', None),
+                   getattr(activity.from_property, 'id', None)]
+        def signature(value):
+            if not value:
+                return None
+            questions = value.get('pending_questions', [])
+            return [value.get('choice_session'), value.get('form_key'), value.get('stage'), str(questions[0]['id']) if questions else None]
+        page = 0
+        multiple_click = False
+        if clicked:
+            if (set(payload) != {'form_choice', 'version'} or not session
+                    or payload.get('version') != ui.get('version') or binding != ui.get('binding')
+                    or signature(session) != ui.get('signature')
+                    or not isinstance(payload.get('form_choice'), str)
+                    or payload['form_choice'] not in ui.get('allowed', [])):
+                return 'Esse botão não é mais válido. Use as opções atuais.'
+            user_text = payload['form_choice']
+            page = ui.get('page', 0)
+            multiple_click = True
+            # Clear only the validated form payload for the shared text validator.
+            activity.value = None
+        try:
+            # Page commands are also accepted as the numbers displayed on buttons.
+            page_action = str(user_text).strip() if session and signature(session) == ui.get('signature') else ''
+            if page_action in ui.get('pages', {}):
+                page = ui['pages'][page_action]
+                response = await cls.reprompt_current_stage(turn_context, session, user_name)
+            else:
+                if multiple_click and session.get('stage') == 'questions':
+                    q = cls.get_next_valid_question(session)
+                    if q and q.get('multiple'):
+                        valid, item = cls.validate_and_normalize_answer(user_text, q)
+                        selected = session['answers'].get(str(q['id']), [])
+                        if valid and item in selected:
+                            selected.remove(item)
+                            await user_profile_accessor.set(turn_context, session)
+                            response = cls.format_question_prompt(q, selected, user_name)
+                        else:
+                            response = await cls._process_user_message(turn_context, user_text, user_name)
+                    else:
+                        response = await cls._process_user_message(turn_context, user_text, user_name)
+                else:
+                    response = await cls._process_user_message(turn_context, user_text, user_name)
+        finally:
+            if clicked:
+                activity.value = payload
+        session = await user_profile_accessor.get(turn_context, lambda: None)
+        nav = await nav_state_accessor.get(turn_context, lambda: {})
+        if (not isinstance(response, str) or not session or nav.get('screen') == 'confirm_menu_interrupt'
+                or payload and not clicked
+                or str(user_text).strip().lower() in {'ajuda', 'help', '?', 'comandos', 'socorro', 'status', 'sobre'}
+                or not is_personal_conversation(activity)
+                or response.startswith('⛔')):
+            return response
+        stage = session.get('stage')
+        choices = []
+        if stage == 'confirm_form':
+            choices = [('1', 'Sim, pode continuar')] + [(str(i), 'Trocar para ' + f.get('name', k))
+                for i, (k, f) in enumerate(((k, f) for k, f in FORMS_CONFIG.items() if k != session.get('form_key')), 2)]
+            text = f"✅ Identifiquei a solicitação: **{session['form_name']}**. Isso está correto?"
+        elif stage == 'questions':
+            q = cls.get_next_valid_question(session)
+            if not q or not q.get('options'):
+                return response
+            choices = [(str(i), label) for i, label in enumerate(q['options'], 1)]
+            text = f"📌 **{q['label']}**"
+            if q.get('multiple'):
+                selected = session['answers'].get(str(q['id']), [])
+                if selected:
+                    text += '\n\n🛒 Itens selecionados até agora: ' + ', '.join(selected)
+                text += '\nToque novamente no item para desmarcar.'
+                choices.append((str(len(q['options']) + 1), 'Continuar'))
+        elif stage == 'ask_attachment':
+            choices = [('1', 'Sim'), ('2', 'Não')]
+            text = '📎 Antes de finalizar: deseja anexar algum **arquivo** a este chamado (print, foto, PDF)?'
+        elif stage == 'collecting_attachments':
+            choices = [('1', 'Concluir anexos')]
+            text = (f"📎 Arquivos recebidos: {len(session.get('pending_attachments', []))}. "
+                    'Como funciona: envie arquivos pelo clipe ou cole no chat. Aguarde a confirmação de cada envio.')
+        else:
+            return response
+        if stage == 'questions' and response.startswith('✅') and '📌' in response:
+            text = response.split('📌', 1)[0] + text
+        session.setdefault('choice_session', uuid4().hex)
+        await user_profile_accessor.set(turn_context, session)
+        # Preserve warnings without repeating the option list from textual fallback.
+        if response.startswith(('⚠️', '⛔')):
+            text = response.split('\n')[0].split(' ou digite uma das opções:')[0] + '\n\n' + text
+        if FLEXSMART_WARNING in response:
+            text = FLEXSMART_WARNING + '\n\n' + text
+        same = signature(session) == ui.get('signature') and binding == ui.get('binding')
+        if not same:
+            page = 0
+        count = len(choices)
+        page = min(page, (count - 1) // 5)
+        visible = choices[page * 5:page * 5 + 5]
+        page_commands = {}
+        if page:
+            page_commands[str(count + 1)] = page - 1
+            visible.append((str(count + 1), 'Voltar'))
+        if (page + 1) * 5 < count:
+            page_commands[str(count + 2)] = page + 1
+            visible.append((str(count + 2), 'Mais opções'))
+        # Multiple-choice tokens remain usable until the question changes.
+        version = ui.get('version') if same and stage == 'questions' and q.get('multiple') else uuid4().hex
+        new_ui = dict(version=version, binding=binding, signature=signature(session), page=page,
+                      pages=page_commands, allowed=[x[0] for x in visible],
+                      seen=(ui.get('seen', []) + ([activity_id] if activity_id else []))[-100:])
+        nav['form_ui'] = new_ui
+        await nav_state_accessor.set(turn_context, nav)
+        text += '\n\nToque em uma opção ou digite o número.'
+        buttons = [CardAction(type='messageBack', title=f'{number} — {label}', text=number,
+                    display_text=f'{number} — {label}', value={'form_choice': number, 'version': version})
+                   for number, label in visible]
+        return Activity(type='message', attachments=[_card_attachment(HeroCard(text=text, buttons=buttons))])
+
+    @classmethod
+    async def _process_user_message(cls, turn_context, user_text: str, user_name: str):
         try:
             from bot.notification_actions import handle as handle_notification
             handled, response = await handle_notification(turn_context, user_name)
@@ -386,6 +515,10 @@ class DynamicFormProcessor:
                         or getattr(activity, "value", {}).get("confirmation") != confirmation
                     ):
                         return build_interrupt_invalid_activity(first_name, confirmation)
+                    if text_lower == "1" and not button_action:
+                        text_lower = "continuar"
+                    elif text_lower == "2" and not button_action:
+                        text_lower = "cancelar preenchimento"
                     if button_action == "continue_form" or text_lower in [
                         "continuar",
                         "continuar preenchimento",
@@ -413,7 +546,7 @@ class DynamicFormProcessor:
                         )
                         return build_menu_activity(first_name)
 
-                    # Não captura números ("1", "2", "0") nem respostas da pergunta atual
+                    # Outras respostas não avançam a pergunta durante a confirmação.
                     return build_interrupt_invalid_activity(first_name, confirmation)
 
                 # 1.2 Comando explícito de cancelamento
@@ -439,6 +572,14 @@ class DynamicFormProcessor:
 
                 # 1.4 Respostas normais do formulário em andamento
                 stage = session.get("stage", "questions")
+                if stage == "ask_attachment":
+                    text_lower = {"1": "sim", "2": "não"}.get(text_lower, text_lower)
+                elif stage == "collecting_attachments" and text_lower == "1":
+                    text_lower = "concluir"
+                elif stage == "questions":
+                    question = cls.get_next_valid_question(session)
+                    if question and question.get("multiple") and text_lower == str(len(question.get("options", [])) + 1):
+                        text_lower = "continuar"
 
                 # Confirmação de formulário
                 if stage == "confirm_form":
@@ -499,6 +640,8 @@ class DynamicFormProcessor:
 
                 # Coleta de anexos
                 if stage == "collecting_attachments":
+                    if text_lower in _DONE_WORDS and not getattr(turn_context.activity, "attachments", None):
+                        return await cls._finalize_session(turn_context, session, user_name)
                     baixados = await TeamsAttachmentHandler.download_attachments(turn_context)
                     if baixados:
                         for filename, file_bytes in baixados:

@@ -33,10 +33,6 @@ class Settings(BaseSettings):
     GLPI_APP_TOKEN: str = ""
     GLPI_USER_TOKEN: str = ""
     IDENTITY_ALLOWED_TENANT_ID: str = ""
-    NOTIFICATIONS_ENABLED: bool = False
-    NOTIFICATIONS_SUPPORT_IDS: str = ""
-    NOTIFICATIONS_INTEGRATION_IDS: str = ""
-    NOTIFICATIONS_INTERVAL: int = 60
     IDENTITY_DB_PATH: str = "data/identity.sqlite3"
 
     class Config:

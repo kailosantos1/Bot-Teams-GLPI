@@ -1,13 +1,27 @@
 import json
+from uuid import uuid4
 import re
 import base64
 import traceback
 from config import FORMS_CONFIG, logger
 from services.glpi_service import GLPIService
-from bot.state import user_profile_accessor
+from bot.state import user_profile_accessor, nav_state_accessor
 from bot.utils import UserNameFormatter
 from bot.auth import UserAuthorization
 from bot.attachments import TeamsAttachmentHandler
+from bot.cards import (
+    VALID_ACTIONS,
+    parse_button_action,
+    is_personal_conversation,
+    build_menu_activity,
+    build_open_ticket_activity,
+    build_consult_activity,
+    build_interrupt_activity,
+    build_unidentified_open_activity,
+    build_invalid_menu_activity,
+    build_invalid_consult_activity,
+    build_interrupt_invalid_activity,
+)
 
 glpi = GLPIService()
 
@@ -121,10 +135,45 @@ class DynamicFormProcessor:
         return None
 
     @classmethod
-    async def handle_special_commands(cls, turn_context, text_lower: str, user_name: str):
+    async def reprompt_current_stage(cls, turn_context, session: dict, user_name: str):
+        stage = session.get("stage", "questions")
+        first_name = UserNameFormatter.extract_first_name(user_name)
+        if stage == "confirm_form":
+            return cls.build_confirmation_message(session, user_name)
+        elif stage == "ask_attachment":
+            return _ASK_ATTACHMENT_MSG.format(first_name=first_name)
+        elif stage == "collecting_attachments":
+            qtd = len(session.get("pending_attachments", []))
+            if qtd > 0:
+                return (
+                    f"📎 **{first_name}**, você tem {qtd} arquivo(s) anexado(s) até agora.\n\n"
+                    f"Pode enviar mais arquivos (Ctrl+V ou clipe 📎) ou digitar **'concluir'** se já mandou tudo."
+                )
+            return _COLLECT_ATTACHMENT_MSG.format(first_name=first_name)
+        elif stage == "questions":
+            current_q = cls.get_next_valid_question(session)
+            if current_q:
+                is_multiple = current_q.get("multiple", False)
+                q_id = str(current_q["id"])
+                current_selected = session["answers"].get(q_id, []) if is_multiple else None
+                return cls.format_question_prompt(current_q, current_selected, user_name)
+            else:
+                session["stage"] = "ask_attachment"
+                profile_acc = user_profile_accessor
+                await profile_acc.set(turn_context, session)
+                return _ASK_ATTACHMENT_MSG.format(first_name=first_name)
+        return "Continuando seu atendimento. Como posso ajudar?"
+
+    @classmethod
+    async def handle_special_commands(cls, turn_context, text_lower: str, user_name: str, is_personal: bool = True):
         first_name = UserNameFormatter.extract_first_name(user_name)
         if text_lower in ["oi", "ola", "olá", "hello", "hey", "eae", "eai", "opa", "bom dia", "boa tarde", "boa noite"]:
+            if is_personal:
+                return build_menu_activity(first_name)
             return UserNameFormatter.format_greeting_with_emoji(user_name)
+        if text_lower == "menu":
+            if is_personal:
+                return build_menu_activity(first_name)
         if text_lower in ["ajuda", "help", "?", "comandos", "menu", "socorro"]:
             return (
                 f"📋 **Olá, {first_name}!** Aqui estão os comandos disponíveis:\n\n"
@@ -135,6 +184,7 @@ class DynamicFormProcessor:
                 f"**🛠️ Comandos:**\n"
                 f"• **cancelar** - Cancela o atendimento atual\n"
                 f"• **ajuda** - Mostra esta mensagem\n"
+                f"• **menu** - Exibe o menu principal\n"
                 f"• **status** - Informações sobre chamados\n"
                 f"• **sobre** - Sobre o assistente\n\n"
                 f"**📋 Formulários disponíveis:**\n"
@@ -147,7 +197,10 @@ class DynamicFormProcessor:
                 f"• 'cadastro', 'novo colaborador'\n"
                 f"• 'FlexSmart', 'erro flex'"
             )
-        if text_lower in ["status", "status do chamado", "meus chamados", "chamados abertos"]:
+        if text_lower in ["meus chamados", "consultar meus chamados"]:
+            if is_personal:
+                return build_consult_activity()
+        if text_lower in ["status", "status do chamado", "chamados abertos"]:
             return (
                 f"🔍 **{first_name}**, para verificar o status de um chamado:\n\n"
                 f"• Acesse o **GLPI** diretamente\n"
@@ -210,6 +263,8 @@ class DynamicFormProcessor:
         form_id = form_config.get("id")
         form_name = form_config.get("name", f"ID {form_id}")
 
+        profile_acc = user_profile_accessor
+
         initial_answers = {}
         pending_questions = []
 
@@ -237,7 +292,7 @@ class DynamicFormProcessor:
         session["pending_questions"] = pending_questions
         session["stage"] = "questions"
         session["pending_attachments"] = []
-        await user_profile_accessor.set(turn_context, session)
+        await profile_acc.set(turn_context, session)
 
         first_q = cls.get_next_valid_question(session)
         if first_q:
@@ -251,31 +306,138 @@ class DynamicFormProcessor:
             )
 
         session["stage"] = "ask_attachment"
-        await user_profile_accessor.set(turn_context, session)
+        await profile_acc.set(turn_context, session)
         return _ASK_ATTACHMENT_MSG.format(first_name=UserNameFormatter.extract_first_name(user_name))
 
     @classmethod
-    async def process_user_message(cls, turn_context, user_text: str, user_name: str) -> str:
+    async def needs_legacy_authorization(cls, context):
+        """Menu não consulta GLPI; a abertura continua usando a validação legada."""
+        activity = context.activity
+        if not is_personal_conversation(activity):
+            return True
+        payload = getattr(activity, "value", None)
+        if isinstance(payload, dict) and {"notification", "notification_choice", "notification_resume"} & set(payload):
+            return False
+        if await user_profile_accessor.get(context, lambda: None):
+            return True
+        if getattr(activity, "value", None):
+            return False
+        text = (getattr(activity, "text", None) or "").strip().lower()
+        if text in {"menu", "ajuda", "help", "?", "comandos", "socorro", "status", "sobre"}:
+            return False
+        nav = await nav_state_accessor.get(context, lambda: {})
+        if nav.get("screen") == "consult":
+            return False
+        return bool(cls.identify_form(text)[1])
+
+    @classmethod
+    async def process_user_message(cls, turn_context, user_text: str, user_name: str):
         try:
-            text_clean = user_text.strip()
+            from bot.notification_actions import handle as handle_notification
+            handled, response = await handle_notification(turn_context, user_name)
+            if handled:
+                return response
+            from bot.ticket_consult import handle as handle_consult
+            if not await user_profile_accessor.get(turn_context, lambda: None):
+                handled, response = await handle_consult(turn_context, (user_text or "").strip())
+                if handled:
+                    return response
+            text_clean = (user_text or "").strip()
             text_lower = text_clean.lower()
             logger.info(f"Processando mensagem: '{text_clean}'")
             logger.info(f"Usuário: {user_name}")
             first_name = UserNameFormatter.extract_first_name(user_name)
+            activity = getattr(turn_context, "activity", None)
+            is_personal = is_personal_conversation(activity)
+            button_action = parse_button_action(activity) if is_personal else None
+            # Payloads de botão nunca viram respostas numéricas/textuais por fallback.
+            invalid_payload = bool(getattr(activity, "value", None)) and button_action is None
+            if invalid_payload:
+                return "⚠️ Opção inválida. Digite sua resposta ou use um botão atual."
 
-            special_response = await cls.handle_special_commands(turn_context, text_lower, user_name)
-            if special_response:
-                return special_response
+            profile_acc = user_profile_accessor
+            nav_acc = nav_state_accessor
 
-            session = await user_profile_accessor.get(turn_context, lambda: None)
+            session = await profile_acc.get(turn_context, lambda: None)
+            nav_state = await nav_acc.get(turn_context, lambda: {})
+            if not isinstance(nav_state, dict):
+                nav_state = {}
+            current_screen = nav_state.get("screen")
 
-            if text_lower in ["cancelar", "sair", "parar", "abortar"]:
-                if session:
-                    await user_profile_accessor.delete(turn_context)
+            # =================================================================
+            # 1. SE EXISTE FORMULÁRIO EM ANDAMENTO
+            # =================================================================
+            if session and not is_personal:
+                if text_lower in ["cancelar", "sair", "parar", "abortar"]:
+                    await profile_acc.delete(turn_context)
                     return f"❌ **{first_name}**, a abertura de chamado foi cancelada."
-                return f"**{first_name}**, não há atendimento em andamento."
+                special = await cls.handle_special_commands(
+                    turn_context, text_lower, user_name, is_personal=False
+                )
+                if special:
+                    return special
 
             if session:
+                # 1.1 Confirmação de interrupção (usuário digitou 'menu' antes)
+                if is_personal and current_screen == "confirm_menu_interrupt":
+                    confirmation = nav_state.get("confirmation")
+                    if button_action and (
+                        button_action not in {"continue_form", "cancel_form_to_menu"}
+                        or getattr(activity, "value", {}).get("confirmation") != confirmation
+                    ):
+                        return build_interrupt_invalid_activity(first_name, confirmation)
+                    if button_action == "continue_form" or text_lower in [
+                        "continuar",
+                        "continuar preenchimento",
+                        "seguir",
+                        "retomar",
+                        "voltar para o chamado",
+                        "voltar ao chamado",
+                    ]:
+                        await nav_acc.delete(turn_context)
+                        return await cls.reprompt_current_stage(turn_context, session, user_name)
+
+                    if button_action == "cancel_form_to_menu" or text_lower in [
+                        "cancelar",
+                        "cancelar preenchimento",
+                        "cancelar e ir ao menu",
+                        "cancelar preenchimento e ir ao menu",
+                        "sair",
+                        "parar",
+                        "abortar",
+                    ]:
+                        await profile_acc.delete(turn_context)
+                        await nav_acc.set(turn_context, {"screen": "menu"})
+                        await turn_context.send_activity(
+                            f"❌ **{first_name}**, a abertura de chamado foi cancelada."
+                        )
+                        return build_menu_activity(first_name)
+
+                    # Não captura números ("1", "2", "0") nem respostas da pergunta atual
+                    return build_interrupt_invalid_activity(first_name, confirmation)
+
+                # 1.2 Comando explícito de cancelamento
+                if text_lower in ["cancelar", "sair", "parar", "abortar"]:
+                    await profile_acc.delete(turn_context)
+                    await nav_acc.set(turn_context, {"screen": "menu"})
+                    await turn_context.send_activity(
+                        f"❌ **{first_name}**, a abertura de chamado foi cancelada."
+                    )
+                    return build_menu_activity(first_name)
+
+                # 1.3 Usuário digitou 'menu' ou clicou em botão de navegação antigo
+                if is_personal and (text_lower == "menu" or button_action):
+                    confirmation = uuid4().hex
+                    await nav_acc.set(turn_context, {"screen": "confirm_menu_interrupt", "confirmation": confirmation})
+                    form_name = session.get("form_name", "Formulário")
+                    return build_interrupt_activity(first_name, form_name, confirmation)
+
+                if text_lower in {"ajuda", "help", "?", "comandos", "socorro", "status", "sobre"}:
+                    return await cls.handle_special_commands(
+                        turn_context, text_lower, user_name, is_personal=is_personal
+                    )
+
+                # 1.4 Respostas normais do formulário em andamento
                 stage = session.get("stage", "questions")
 
                 # Confirmação de formulário
@@ -314,7 +476,7 @@ class DynamicFormProcessor:
                                     )
 
                             session["form_key"] = novo_form_key
-                            await user_profile_accessor.set(turn_context, session)
+                            await profile_acc.set(turn_context, session)
                             return await cls.start_form_questions(turn_context, session, user_name)
 
                     confirm_msg = cls.build_confirmation_message(session, user_name)
@@ -325,7 +487,7 @@ class DynamicFormProcessor:
                     if text_lower in _YES_WORDS:
                         session["stage"] = "collecting_attachments"
                         session["pending_attachments"] = []
-                        await user_profile_accessor.set(turn_context, session)
+                        await profile_acc.set(turn_context, session)
                         return _COLLECT_ATTACHMENT_MSG.format(first_name=first_name)
                     elif text_lower in _NO_WORDS:
                         return await cls._finalize_session(turn_context, session, user_name)
@@ -344,7 +506,7 @@ class DynamicFormProcessor:
                                 "filename": filename,
                                 "content_b64": base64.b64encode(file_bytes).decode("ascii"),
                             })
-                        await user_profile_accessor.set(turn_context, session)
+                        await profile_acc.set(turn_context, session)
                         qtd = len(session["pending_attachments"])
                         if text_lower in _DONE_WORDS:
                             return await cls._finalize_session(turn_context, session, user_name)
@@ -371,7 +533,7 @@ class DynamicFormProcessor:
                 current_q = cls.get_next_valid_question(session)
                 if not current_q:
                     session["stage"] = "ask_attachment"
-                    await user_profile_accessor.set(turn_context, session)
+                    await profile_acc.set(turn_context, session)
                     return _ASK_ATTACHMENT_MSG.format(first_name=first_name)
 
                 q_id = str(current_q["id"])
@@ -385,7 +547,7 @@ class DynamicFormProcessor:
 
                     session["answers"][q_id] = resultado
                     session["pending_questions"].pop(0)
-                    await user_profile_accessor.set(turn_context, session)
+                    await profile_acc.set(turn_context, session)
 
                     aviso = ""
                     if resultado == "FlexSmart":
@@ -401,7 +563,7 @@ class DynamicFormProcessor:
                             return next_prompt
 
                     session["stage"] = "ask_attachment"
-                    await user_profile_accessor.set(turn_context, session)
+                    await profile_acc.set(turn_context, session)
                     if aviso:
                         return f"{aviso}\n\n{_ASK_ATTACHMENT_MSG.format(first_name=first_name)}"
                     else:
@@ -417,16 +579,16 @@ class DynamicFormProcessor:
                             return f"⚠️ **{first_name}**, selecione pelo menos 1 item!"
                         session["answers"][q_id] = current_list
                         session["pending_questions"].pop(0)
-                        await user_profile_accessor.set(turn_context, session)
+                        await profile_acc.set(turn_context, session)
                         next_q = cls.get_next_valid_question(session)
                         if next_q:
                             next_is_mult = next_q.get("multiple", False)
                             next_q_id = str(next_q["id"])
                             next_selected = session["answers"].get(next_q_id, []) if next_is_mult else None
-                            await user_profile_accessor.set(turn_context, session)
+                            await profile_acc.set(turn_context, session)
                             return cls.format_question_prompt(next_q, next_selected, user_name)
                         session["stage"] = "ask_attachment"
-                        await user_profile_accessor.set(turn_context, session)
+                        await profile_acc.set(turn_context, session)
                         return _ASK_ATTACHMENT_MSG.format(first_name=first_name)
                     valido, item_selecionado = cls.validate_and_normalize_answer(text_clean, current_q)
                     if not valido:
@@ -434,7 +596,7 @@ class DynamicFormProcessor:
                     if item_selecionado not in current_list:
                         current_list.append(item_selecionado)
                     session["answers"][q_id] = current_list
-                    await user_profile_accessor.set(turn_context, session)
+                    await profile_acc.set(turn_context, session)
                     return cls.format_question_prompt(current_q, current_list, user_name)
 
                 # Escolha única ou texto
@@ -448,53 +610,255 @@ class DynamicFormProcessor:
                     next_is_mult = next_q.get("multiple", False)
                     next_q_id = str(next_q["id"])
                     next_selected = session["answers"].get(next_q_id, []) if next_is_mult else None
-                    await user_profile_accessor.set(turn_context, session)
+                    await profile_acc.set(turn_context, session)
                     return cls.format_question_prompt(next_q, next_selected, user_name)
                 session["stage"] = "ask_attachment"
-                await user_profile_accessor.set(turn_context, session)
+                await profile_acc.set(turn_context, session)
                 return _ASK_ATTACHMENT_MSG.format(first_name=first_name)
 
-            # Início de conversa
-            form_key, form_config = cls.identify_form(text_lower)
-            if not form_config:
-                return (
-                    f"❌ **{first_name}**, não consegui identificar sua solicitação.\n\n"
-                    f"**Tente descrever com palavras como:**\n"
-                    f"• **manutenção**, **impressora**, **computador** para problemas\n"
-                    f"• **cadastro**, **admissão** para novos colaboradores\n"
-                    f"• **FlexSmart**, **erro flex** para o sistema FlexSmart\n\n"
-                    f"Ou digite **ajuda** para ver todos os comandos."
+            # =================================================================
+            # 2. NÃO HÁ FORMULÁRIO EM ANDAMENTO
+            # =================================================================
+            # 2.1 Em canais ou grupos (conversa não pessoal)
+            if not is_personal:
+                special_response = await cls.handle_special_commands(
+                    turn_context, text_lower, user_name, is_personal=False
                 )
+                if special_response:
+                    return special_response
 
-            if form_key == "cadastro":
-                user_email = getattr(turn_context, 'user_email', None)
-                if not user_email:
-                    user_email = UserAuthorization.extract_email(turn_context.activity)
-                display_name = turn_context.activity.from_property.name if turn_context.activity else None
-                if not UserAuthorization.can_access_cadastro(user_email, display_name):
-                    logger.warning(f"⛔ Acesso NEGADO ao cadastro para: {user_email}")
+                if text_lower in ["cancelar", "sair", "parar", "abortar"]:
+                    return f"**{first_name}**, não há atendimento em andamento."
+
+                form_key, form_config = cls.identify_form(text_lower)
+                if not form_config:
                     return (
-                        f"⛔ **Acesso negado.**\n\n"
-                        f"**{first_name}**, você não tem permissão para usar o formulário de **Cadastro de Colaborador**.\n\n"
-                        f"Este formulário é restrito aos seguintes grupos:\n"
-                        f"• Recursos Humanos (RH)\n"
-                        f"• TI\n"
-                        f"• Gerência/Diretoria\n\n"
-                        f"Você ainda pode abrir chamados de **manutenção** ou **FlexSmart** normalmente!"
+                        f"❌ **{first_name}**, não consegui identificar sua solicitação.\n\n"
+                        f"**Tente descrever com palavras como:**\n"
+                        f"• **manutenção**, **impressora**, **computador** para problemas\n"
+                        f"• **cadastro**, **admissão** para novos colaboradores\n"
+                        f"• **FlexSmart**, **erro flex** para o sistema FlexSmart\n\n"
+                        f"Ou digite **ajuda** para ver todos os comandos."
                     )
 
-            new_session = {
-                "form_key": form_key,
-                "form_id": form_config.get("id"),
-                "form_name": form_config.get("name", f"ID {form_config.get('id')}"),
-                "answers": {},
-                "pending_questions": [],
-                "stage": "confirm_form",
-                "pending_attachments": [],
-            }
-            await user_profile_accessor.set(turn_context, new_session)
+                if form_key == "cadastro":
+                    user_email = getattr(turn_context, 'user_email', None)
+                    if not user_email:
+                        user_email = UserAuthorization.extract_email(turn_context.activity)
+                    display_name = turn_context.activity.from_property.name if turn_context.activity else None
+                    if not UserAuthorization.can_access_cadastro(user_email, display_name):
+                        logger.warning(f"⛔ Acesso NEGADO ao cadastro para: {user_email}")
+                        return (
+                            f"⛔ **Acesso negado.**\n\n"
+                            f"**{first_name}**, você não tem permissão para usar o formulário de **Cadastro de Colaborador**.\n\n"
+                            f"Este formulário é restrito aos seguintes grupos:\n"
+                            f"• Recursos Humanos (RH)\n"
+                            f"• TI\n"
+                            f"• Gerência/Diretoria\n\n"
+                            f"Você ainda pode abrir chamados de **manutenção** ou **FlexSmart** normalmente!"
+                        )
 
-            return cls.build_confirmation_message(new_session, user_name)
+                new_session = {
+                    "form_key": form_key,
+                    "form_id": form_config.get("id"),
+                    "form_name": form_config.get("name", f"ID {form_config.get('id')}"),
+                    "answers": {},
+                    "pending_questions": [],
+                    "stage": "confirm_form",
+                    "pending_attachments": [],
+                }
+                await profile_acc.set(turn_context, new_session)
+                return cls.build_confirmation_message(new_session, user_name)
+
+            if text_lower in {"oi", "ola", "olá", "hello", "hey", "eae", "eai", "opa",
+                              "bom dia", "boa tarde", "boa noite", "menu"} and not button_action:
+                await nav_acc.set(turn_context, {"screen": "menu"})
+                return build_menu_activity(first_name)
+
+            # 2.2 Em conversa pessoal (1:1) com menu e navegação
+            # 2.2.1 Ações explícitas de botões
+            if button_action == "open_ticket":
+                await nav_acc.set(turn_context, {"screen": "open_ticket"})
+                return build_open_ticket_activity(first_name)
+
+            if button_action == "consult_tickets":
+                await nav_acc.set(turn_context, {"screen": "consult"})
+                return build_consult_activity()
+
+            if button_action == "menu" or text_lower == "menu":
+                await nav_acc.set(turn_context, {"screen": "menu"})
+                return build_menu_activity(first_name)
+
+            # 2.2.2 Cancelar quando não há formulário
+            if text_lower in ["cancelar", "sair", "parar", "abortar"]:
+                await nav_acc.set(turn_context, {"screen": "menu"})
+                await turn_context.send_activity(f"**{first_name}**, não há atendimento em andamento.")
+                return build_menu_activity(first_name)
+
+            # 2.2.3 Tela atual: "open_ticket" (abertura de chamado solicitada)
+            if current_screen == "open_ticket":
+                if text_clean == "0" or text_lower in [
+                    "0 — voltar ao menu",
+                    "0 - voltar ao menu",
+                    "voltar ao menu",
+                    "voltar",
+                    "menu",
+                ]:
+                    await nav_acc.set(turn_context, {"screen": "menu"})
+                    return build_menu_activity(first_name)
+
+                form_key, form_config = cls.identify_form(text_lower)
+                if form_config:
+                    if form_key == "cadastro":
+                        user_email = getattr(turn_context, 'user_email', None)
+                        if not user_email:
+                            user_email = UserAuthorization.extract_email(turn_context.activity)
+                        display_name = turn_context.activity.from_property.name if turn_context.activity else None
+                        if not UserAuthorization.can_access_cadastro(user_email, display_name):
+                            logger.warning(f"⛔ Acesso NEGADO ao cadastro para: {user_email}")
+                            return (
+                                f"⛔ **Acesso negado.**\n\n"
+                                f"**{first_name}**, você não tem permissão para usar o formulário de **Cadastro de Colaborador**.\n\n"
+                                f"Este formulário é restrito aos seguintes grupos:\n"
+                                f"• Recursos Humanos (RH)\n"
+                                f"• TI\n"
+                                f"• Gerência/Diretoria\n\n"
+                                f"Você ainda pode abrir chamados de **manutenção** ou **FlexSmart** normalmente!"
+                            )
+
+                    new_session = {
+                        "form_key": form_key,
+                        "form_id": form_config.get("id"),
+                        "form_name": form_config.get("name", f"ID {form_config.get('id')}"),
+                        "answers": {},
+                        "pending_questions": [],
+                        "stage": "confirm_form",
+                        "pending_attachments": [],
+                    }
+                    await profile_acc.set(turn_context, new_session)
+                    await nav_acc.delete(turn_context)
+                    return cls.build_confirmation_message(new_session, user_name)
+
+                # Mantém na abertura permitindo tentar novamente ou voltar
+                return build_unidentified_open_activity(first_name)
+
+            # 2.2.4 Tela atual: "consult" (consulta de chamados temporária)
+            if current_screen == "consult":
+                if text_clean == "1" or text_lower in [
+                    "1 — abrir um chamado",
+                    "1 - abrir um chamado",
+                    "abrir um chamado",
+                    "abrir chamado",
+                    "abrir",
+                ]:
+                    await nav_acc.set(turn_context, {"screen": "open_ticket"})
+                    return build_open_ticket_activity(first_name)
+
+                if text_clean == "0" or text_lower in [
+                    "0 — voltar ao menu",
+                    "0 - voltar ao menu",
+                    "voltar ao menu",
+                    "voltar",
+                    "menu",
+                ]:
+                    await nav_acc.set(turn_context, {"screen": "menu"})
+                    return build_menu_activity(first_name)
+
+                return build_invalid_consult_activity()
+
+            # 2.2.5 Tela "menu" ou IDLE
+            # Saudações e comando 'menu'
+            if text_lower in [
+                "oi",
+                "ola",
+                "olá",
+                "hello",
+                "hey",
+                "eae",
+                "eai",
+                "opa",
+                "bom dia",
+                "boa tarde",
+                "boa noite",
+                "menu",
+            ]:
+                await nav_acc.set(turn_context, {"screen": "menu"})
+                return build_menu_activity(first_name)
+
+            # Opção 1: Abrir um chamado
+            if text_clean == "1" or text_lower in [
+                "1 — abrir um chamado",
+                "1 - abrir um chamado",
+                "abrir um chamado",
+                "abrir chamado",
+            ]:
+                await nav_acc.set(turn_context, {"screen": "open_ticket"})
+                return build_open_ticket_activity(first_name)
+
+            # Opção 2: Consultar chamados
+            if text_clean == "2" or text_lower in [
+                "2 — consultar meus chamados",
+                "2 - consultar meus chamados",
+                "consultar meus chamados",
+                "consultar chamados",
+                "meus chamados",
+                "consultar",
+            ]:
+                await nav_acc.set(turn_context, {"screen": "consult"})
+                return build_consult_activity()
+
+            special_response = await cls.handle_special_commands(
+                turn_context, text_lower, user_name, is_personal=True
+            )
+            if special_response:
+                return special_response
+
+            # Descrição direta de chamado sem passar pelo menu primeiro
+            form_key, form_config = cls.identify_form(text_lower)
+            if form_config:
+                if form_key == "cadastro":
+                    user_email = getattr(turn_context, 'user_email', None)
+                    if not user_email:
+                        user_email = UserAuthorization.extract_email(turn_context.activity)
+                    display_name = turn_context.activity.from_property.name if turn_context.activity else None
+                    if not UserAuthorization.can_access_cadastro(user_email, display_name):
+                        logger.warning(f"⛔ Acesso NEGADO ao cadastro para: {user_email}")
+                        return (
+                            f"⛔ **Acesso negado.**\n\n"
+                            f"**{first_name}**, você não tem permissão para usar o formulário de **Cadastro de Colaborador**.\n\n"
+                            f"Este formulário é restrito aos seguintes grupos:\n"
+                            f"• Recursos Humanos (RH)\n"
+                            f"• TI\n"
+                            f"• Gerência/Diretoria\n\n"
+                            f"Você ainda pode abrir chamados de **manutenção** ou **FlexSmart** normalmente!"
+                        )
+
+                new_session = {
+                    "form_key": form_key,
+                    "form_id": form_config.get("id"),
+                    "form_name": form_config.get("name", f"ID {form_config.get('id')}"),
+                    "answers": {},
+                    "pending_questions": [],
+                    "stage": "confirm_form",
+                    "pending_attachments": [],
+                }
+                await profile_acc.set(turn_context, new_session)
+                await nav_acc.delete(turn_context)
+                return cls.build_confirmation_message(new_session, user_name)
+
+            # Comandos especiais informativos
+            special_response = await cls.handle_special_commands(
+                turn_context, text_lower, user_name, is_personal=True
+            )
+            if special_response:
+                return special_response
+
+            if current_screen == "menu":
+                return build_invalid_menu_activity()
+
+            # IDLE não reconhecido -> exibe o menu inicial
+            await nav_acc.set(turn_context, {"screen": "menu"})
+            return build_menu_activity(first_name)
 
         except Exception as e:
             logger.error(f"Erro em process_user_message: {e}")
@@ -509,7 +873,11 @@ class DynamicFormProcessor:
     @classmethod
     async def _finalize_session(cls, turn_context, session: dict, user_name: str) -> str:
         try:
-            await user_profile_accessor.delete(turn_context)
+            profile_acc = user_profile_accessor
+            nav_acc = nav_state_accessor
+            await profile_acc.delete(turn_context)
+            await nav_acc.delete(turn_context)
+
             form_id = session["form_id"]
             form_name = session["form_name"]
             final_answers = session["answers"]
@@ -527,8 +895,9 @@ class DynamicFormProcessor:
             await turn_context.send_activity(
                 f"⏳ **{first_name}**, estou processando sua solicitação..."
             )
+            glpi_svc = getattr(cls, "glpi", glpi)
             try:
-                success, msg = glpi.create_form_answer(
+                success, msg = glpi_svc.create_form_answer(
                     form_id,
                     final_answers,
                     requester_email=user_email,

@@ -5,3 +5,5 @@ requests>=2.31.0
 python-dotenv>=1.0.0
 pyyaml>=6.0.1
 pydantic-settings>=2.0.0
+# Transporte assíncrono importado pelo SDK/msrest (venv verificado).
+aiohttp>=3.14.5,<4

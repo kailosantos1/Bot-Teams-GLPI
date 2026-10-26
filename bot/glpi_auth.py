@@ -337,4 +337,4 @@ class GLPIAuthService:
 
 
 # Instância global
-glpi_auth = GLPIAuthService()
+glpi_auth = GLPIAuthService()

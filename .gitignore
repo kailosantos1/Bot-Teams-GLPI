@@ -1,21 +1,89 @@
-# Segredos e Configurações Sensíveis
+# Instruções e configurações locais de agentes
+AGENTS.md
+AGENTS.override.md
+.agents/
+.codex/
+CLAUDE.md
+GEMINI.md
+.github/copilot-instructions.md
+
+# Credenciais e configuração privada; somente o modelo pode ser publicado
 .env
+.env.*
+!.env.example
+.envrc
+.aws/
+credentials.json
+credentials.*.json
+secrets.json
+secrets.*.json
+*.pem
+*.key
+*.p12
+*.pfx
 
-# Pastas de Build e Executáveis (PyInstaller)
-build/
-dist/
-*.spec
+# Testes e diagnósticos locais (pastas e arquivos conferidos)
+/tests/
+/Extensoes/Testar Formularios/
+/Extensoes/Testar Validacoes/
+/Extensoes/Formularios/perguntas.py
+/Extensoes/Formularios/debug_question_options.py
+/tools/inspect_identity_sdk.py
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
 
-# Cache do Python
-__pycache__/
-*.pyc
+# Documentação interna das etapas; instruções operacionais estão no README
+/docs/identity.md
+/docs/ticket-query.md
+/docs/ticket-conversation.md
+/docs/notifications.md
 
-# Ambiente Virtual (se houver na máquina)
+# Ambientes virtuais e caches Python
 venv/
 .venv/
 env/
+ENV/
+__pycache__/
+*.py[cod]
+.mypy_cache/
+.ruff_cache/
 
-# Configurações de IDEs (VS Code / PyCharm)
+# Logs e artefatos gerados
+*.log
+*.log.*
+logs/
+build/
+dist/
+*.egg-info/
+*.spec
+
+# Bancos locais, auxiliares SQLite, dumps e backups
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.db.*
+*.sqlite.*
+*.sqlite3.*
+*.sql
+*.sql.gz
+*.bak
+*.backup
+*.old
+*~
+
+# IDE e sistema operacional
 .vscode/
 .idea/
-*.spec
+*.code-workspace
+*.swp
+*.swo
+.DS_Store
+._*
+Thumbs.db
+Desktop.ini

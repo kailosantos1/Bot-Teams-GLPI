@@ -110,4 +110,4 @@ class UserNameFormatter:
             f"Ou digite **'ajuda'** para ver todos os comandos."
         )
         
-        return saudacao + instrucao
+        return saudacao + instrucao

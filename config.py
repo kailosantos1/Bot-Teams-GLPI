@@ -3,7 +3,20 @@ import os
 import yaml
 import logging
 import traceback
-from pydantic_settings import BaseSettings
+try:
+    from pydantic_settings import BaseSettings
+except ImportError:
+    class BaseSettings:
+        def __init__(self, **kwargs):
+            for field, val in self.__class__.__dict__.items():
+                if not field.startswith("_") and not callable(val):
+                    env_val = os.getenv(field)
+                    if env_val is not None:
+                        setattr(self, field, env_val)
+                    elif field in kwargs:
+                        setattr(self, field, kwargs[field])
+                    else:
+                        setattr(self, field, val)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -16,9 +29,15 @@ class Settings(BaseSettings):
     MICROSOFT_APP_ID: str = ""
     MICROSOFT_APP_PASSWORD: str = ""
     MICROSOFT_APP_TENANT_ID: str = ""
-    GLPI_URL: str
-    GLPI_APP_TOKEN: str
-    GLPI_USER_TOKEN: str
+    GLPI_URL: str = ""
+    GLPI_APP_TOKEN: str = ""
+    GLPI_USER_TOKEN: str = ""
+    IDENTITY_ALLOWED_TENANT_ID: str = ""
+    NOTIFICATIONS_ENABLED: bool = False
+    NOTIFICATIONS_SUPPORT_IDS: str = ""
+    NOTIFICATIONS_INTEGRATION_IDS: str = ""
+    NOTIFICATIONS_INTERVAL: int = 60
+    IDENTITY_DB_PATH: str = "data/identity.sqlite3"
 
     class Config:
         env_file = ".env"

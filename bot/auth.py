@@ -182,4 +182,4 @@ class UserAuthorization:
 
 
 # Instância global
-user_auth = UserAuthorization()
+user_auth = UserAuthorization()

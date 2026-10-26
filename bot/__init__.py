@@ -1,3 +1,3 @@
 from .dialogs import DynamicFormProcessor
 
-__all__ = ["DynamicFormProcessor"]
+__all__ = ["DynamicFormProcessor"]

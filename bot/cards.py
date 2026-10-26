@@ -4,6 +4,8 @@ Gera HeroCards e Activities estruturadas compatíveis com o SDK do Microsoft Tea
 e oferece fallback transparente quando o SDK não estiver instalado.
 """
 
+from html import escape
+from copy import copy
 from typing import Any, Dict, List, Optional
 
 try:
@@ -135,6 +137,13 @@ def _btn(title: str, text: str, action: str, confirmation: str = None) -> CardAc
 
 
 def _card_attachment(card: HeroCard) -> Attachment:
+    # HeroCard.text supports HTML, not message Markdown. All callers author plain
+    # text. Encode it once at the boundary so external values cannot become HTML.
+    # A copy keeps the caller's model unchanged; titles/buttons/payloads are intact.
+    if isinstance(card, HeroCard):
+        card = copy(card)
+        if card.text is not None:
+            card.text = escape(card.text, quote=False)
     if CardFactory is not None:
         return CardFactory.hero_card(card)
     return Attachment(content_type="application/vnd.microsoft.card.hero", content=card)
@@ -173,7 +182,7 @@ OPEN_TICKET_TEXT = (
     "Para voltar, toque no botão ou digite 0."
 )
 CONSULT_TEXT = "Não consegui confirmar seu acesso aos chamados. Entre em contato com o suporte de TI."
-INTERRUPT_TEXT = "⚠️ você já tem um chamado em preenchimento (**{form_name}**).\n\nO que deseja fazer? Toque em uma opção ou digite o número."
+INTERRUPT_TEXT = "⚠️ você já tem um chamado em preenchimento ({form_name}).\n\nO que deseja fazer? Toque em uma opção ou digite o número."
 UNIDENTIFIED_OPEN_TEXT = (
     "❌ não consegui identificar sua solicitação.\n\n"
     "Tente descrever com palavras como manutenção, impressora, computador, FlexSmart, cadastro ou admissão."

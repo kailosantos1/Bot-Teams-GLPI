@@ -2,6 +2,7 @@
 import asyncio
 import secrets
 import time
+from identity.diagnostics import log_identity_failure
 from bot.cards import Activity, HeroCard, CardAction, _card_attachment, is_personal_conversation
 from config import settings
 from identity.notifications import NotificationStore
@@ -30,8 +31,13 @@ async def handle(context, user_name):
     if policy is None:
         return True, fallback()
     resolver = getattr(context, 'resolve_ticket_identity', None)
-    result = await resolver() if resolver else None
+    try:
+        result = await resolver() if resolver else None
+    except Exception:
+        log_identity_failure(None)
+        raise
     if not result or result.code != 'ok' or not result.identity:
+        log_identity_failure(result)
         return True, fallback()
     binding = [result.identity.tenant_id, result.identity.object_id, result.glpi_user_id,
                context.activity.conversation.id, context.activity.from_property.id]

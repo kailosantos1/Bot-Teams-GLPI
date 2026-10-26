@@ -1,3 +1,5 @@
+> Diagnóstico atual no servidor (PowerShell), configuração segura, inicialização preservando vínculos e códigos de log: [server-identity-powershell.md](server-identity-powershell.md). Os trechos preparatórios abaixo são registros históricos.
+
 > Etapa 5: o banco de vínculos passa a admitir schema v2, com operações persistentes de resposta, preservando links/auditoria por migração incremental. A identidade segura continua sendo resolvida a cada operação. Ver [ticket-conversation.md](ticket-conversation.md) para retenção, reserva de envio e homologação pendente.
 
 > Atualização da etapa 4: a composição compartilhada proposta neste documento foi ligada a `main.py` para a consulta pessoal. A abertura continua usando sua autorização legada. Consulte [ticket-query.md](ticket-query.md) para funcionamento, contrato GLPI, resultados locais e pendências atuais; os trechos preparatórios abaixo registram as etapas 2/2.1.

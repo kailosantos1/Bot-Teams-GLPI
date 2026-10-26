@@ -3,6 +3,8 @@ import asyncio
 import secrets
 import time
 import unicodedata
+import logging
+from identity.diagnostics import log_identity_failure
 from bot.cards import Activity, HeroCard, CardAction, _card_attachment, is_personal_conversation
 from bot.state import user_state, nav_state_accessor
 from config import settings
@@ -11,6 +13,7 @@ from services.ticket_query import TicketQuery, STATUS_LABELS
 query_state_accessor = user_state.create_property('TicketQueryState')
 notification_state_accessor = user_state.create_property('NotificationState')
 query = TicketQuery(settings.GLPI_URL, settings.GLPI_APP_TOKEN, settings.GLPI_USER_TOKEN)
+logger = logging.getLogger('bot.ticket_query')
 TTL = 300
 DENIED = 'Não consegui confirmar seu acesso aos chamados. Entre em contato com o suporte de TI.'
 ERROR = 'Não consegui consultar seus chamados agora. Tente novamente em instantes.'
@@ -80,6 +83,7 @@ async def handle(context, text):
     except Exception:
         result = None
     if result is None or result.code != 'ok' or result.identity is None:
+        log_identity_failure(result)
         await reset(context)
         return True, card(DENIED, '', [('0', 'Voltar ao menu')])
     binding = [result.identity.tenant_id, result.identity.object_id, result.glpi_user_id,
@@ -96,6 +100,7 @@ async def handle(context, text):
             # Explicit return to list: requery current items and rotate version.
             text, payload = '8', None
         except Exception:
+            logger.warning('ticket_conversation_failure code=conversation_unavailable')
             # Keep draft references on recoverable read/storage failures; never log text.
             from bot.ticket_detail import screen
             actions = [('retry_view', 'Tentar novamente'), ('cancel', 'Cancelar resposta')] if state.get('view') in {'capture', 'confirm'} else [('8', 'Atualizar conversa'), ('4', 'Voltar ao chamado'), ('3', 'Meus chamados'), ('0', 'Menu principal')]
@@ -133,6 +138,7 @@ async def handle(context, text):
             try:
                 return True, await details(context, result, binding, state, tid=tid)
             except AccessDenied:
+                logger.warning('ticket_query_failure code=ticket_unavailable')
                 return True, card(UNAVAILABLE, state['version'],
                                   [('8', 'Atualizar'), ('0', 'Voltar ao menu')])
         if op not in {'atualizar', 'proximos', 'anteriores', 'lista'}:
@@ -160,5 +166,6 @@ async def handle(context, text):
                 actions.append((op, label))
         return True, card(message, version, actions)
     except Exception:
+        logger.warning('ticket_query_failure code=query_unavailable')
         await reset(context)
         return True, card(ERROR, '', [('8', 'Atualizar'), ('0', 'Voltar ao menu')])

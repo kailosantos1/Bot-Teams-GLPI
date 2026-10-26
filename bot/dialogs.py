@@ -402,13 +402,13 @@ class DynamicFormProcessor:
         if stage == 'confirm_form':
             choices = [('1', 'Sim, pode continuar')] + [(str(i), 'Trocar para ' + f.get('name', k))
                 for i, (k, f) in enumerate(((k, f) for k, f in FORMS_CONFIG.items() if k != session.get('form_key')), 2)]
-            text = f"✅ Identifiquei a solicitação: **{session['form_name']}**. Isso está correto?"
+            text = f"✅ Identifiquei a solicitação: {session['form_name']}. Isso está correto?"
         elif stage == 'questions':
             q = cls.get_next_valid_question(session)
             if not q or not q.get('options'):
                 return response
             choices = [(str(i), label) for i, label in enumerate(q['options'], 1)]
-            text = f"📌 **{q['label']}**"
+            text = f"📌 {q['label']}"
             if q.get('multiple'):
                 selected = session['answers'].get(str(q['id']), [])
                 if selected:
@@ -417,7 +417,7 @@ class DynamicFormProcessor:
                 choices.append((str(len(q['options']) + 1), 'Continuar'))
         elif stage == 'ask_attachment':
             choices = [('1', 'Sim'), ('2', 'Não')]
-            text = '📎 Antes de finalizar: deseja anexar algum **arquivo** a este chamado (print, foto, PDF)?'
+            text = '📎 Antes de finalizar: deseja anexar algum arquivo a este chamado (print, foto, PDF)?'
         elif stage == 'collecting_attachments':
             choices = [('1', 'Concluir anexos')]
             text = (f"📎 Arquivos recebidos: {len(session.get('pending_attachments', []))}. "
@@ -425,12 +425,13 @@ class DynamicFormProcessor:
         else:
             return response
         if stage == 'questions' and response.startswith('✅') and '📌' in response:
-            text = response.split('📌', 1)[0] + text
+            text = f"✅ Identifiquei a solicitação: {session['form_name']}.\n\n" + text
         session.setdefault('choice_session', uuid4().hex)
         await user_profile_accessor.set(turn_context, session)
         # Preserve warnings without repeating the option list from textual fallback.
         if response.startswith(('⚠️', '⛔')):
-            text = response.split('\n')[0].split(' ou digite uma das opções:')[0] + '\n\n' + text
+            warning = '⚠️ Selecione pelo menos 1 item!' if 'selecione pelo menos 1 item!' in response else '⚠️ Opção inválida. Use as opções atuais.'
+            text = warning + '\n\n' + text
         if FLEXSMART_WARNING in response:
             text = FLEXSMART_WARNING + '\n\n' + text
         same = signature(session) == ui.get('signature') and binding == ui.get('binding')

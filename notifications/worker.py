@@ -38,7 +38,7 @@ def notice(event, title):
             'O suporte enviou uma mensagem.')
     button = CardAction(type='messageBack', title='Ver chamado', text='Ver chamado',
                         display_text='Ver chamado', value={'notification': event['id']})
-    return Activity(type='message', text=text, attachments=[_card_attachment(HeroCard(text=text, buttons=[button]))])
+    return Activity(type='message', attachments=[_card_attachment(HeroCard(text=text, buttons=[button]))])
 
 
 class SDKTransport:

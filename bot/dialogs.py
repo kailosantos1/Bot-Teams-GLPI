@@ -1,4 +1,5 @@
 import json
+from uuid import uuid4
 import re
 import base64
 import traceback
@@ -158,7 +159,7 @@ class DynamicFormProcessor:
                 return cls.format_question_prompt(current_q, current_selected, user_name)
             else:
                 session["stage"] = "ask_attachment"
-                profile_acc = getattr(cls, "user_profile_accessor", user_profile_accessor)
+                profile_acc = user_profile_accessor
                 await profile_acc.set(turn_context, session)
                 return _ASK_ATTACHMENT_MSG.format(first_name=first_name)
         return "Continuando seu atendimento. Como posso ajudar?"
@@ -262,7 +263,7 @@ class DynamicFormProcessor:
         form_id = form_config.get("id")
         form_name = form_config.get("name", f"ID {form_id}")
 
-        profile_acc = getattr(cls, "user_profile_accessor", user_profile_accessor)
+        profile_acc = user_profile_accessor
 
         initial_answers = {}
         pending_questions = []
@@ -309,8 +310,38 @@ class DynamicFormProcessor:
         return _ASK_ATTACHMENT_MSG.format(first_name=UserNameFormatter.extract_first_name(user_name))
 
     @classmethod
+    async def needs_legacy_authorization(cls, context):
+        """Menu não consulta GLPI; a abertura continua usando a validação legada."""
+        activity = context.activity
+        if not is_personal_conversation(activity):
+            return True
+        payload = getattr(activity, "value", None)
+        if isinstance(payload, dict) and {"notification", "notification_choice", "notification_resume"} & set(payload):
+            return False
+        if await user_profile_accessor.get(context, lambda: None):
+            return True
+        if getattr(activity, "value", None):
+            return False
+        text = (getattr(activity, "text", None) or "").strip().lower()
+        if text in {"menu", "ajuda", "help", "?", "comandos", "socorro", "status", "sobre"}:
+            return False
+        nav = await nav_state_accessor.get(context, lambda: {})
+        if nav.get("screen") == "consult":
+            return False
+        return bool(cls.identify_form(text)[1])
+
+    @classmethod
     async def process_user_message(cls, turn_context, user_text: str, user_name: str):
         try:
+            from bot.notification_actions import handle as handle_notification
+            handled, response = await handle_notification(turn_context, user_name)
+            if handled:
+                return response
+            from bot.ticket_consult import handle as handle_consult
+            if not await user_profile_accessor.get(turn_context, lambda: None):
+                handled, response = await handle_consult(turn_context, (user_text or "").strip())
+                if handled:
+                    return response
             text_clean = (user_text or "").strip()
             text_lower = text_clean.lower()
             logger.info(f"Processando mensagem: '{text_clean}'")
@@ -318,10 +349,14 @@ class DynamicFormProcessor:
             first_name = UserNameFormatter.extract_first_name(user_name)
             activity = getattr(turn_context, "activity", None)
             is_personal = is_personal_conversation(activity)
-            button_action = parse_button_action(activity)
+            button_action = parse_button_action(activity) if is_personal else None
+            # Payloads de botão nunca viram respostas numéricas/textuais por fallback.
+            invalid_payload = bool(getattr(activity, "value", None)) and button_action is None
+            if invalid_payload:
+                return "⚠️ Opção inválida. Digite sua resposta ou use um botão atual."
 
-            profile_acc = getattr(cls, "user_profile_accessor", user_profile_accessor)
-            nav_acc = getattr(cls, "nav_state_accessor", nav_state_accessor)
+            profile_acc = user_profile_accessor
+            nav_acc = nav_state_accessor
 
             session = await profile_acc.get(turn_context, lambda: None)
             nav_state = await nav_acc.get(turn_context, lambda: {})
@@ -332,9 +367,25 @@ class DynamicFormProcessor:
             # =================================================================
             # 1. SE EXISTE FORMULÁRIO EM ANDAMENTO
             # =================================================================
+            if session and not is_personal:
+                if text_lower in ["cancelar", "sair", "parar", "abortar"]:
+                    await profile_acc.delete(turn_context)
+                    return f"❌ **{first_name}**, a abertura de chamado foi cancelada."
+                special = await cls.handle_special_commands(
+                    turn_context, text_lower, user_name, is_personal=False
+                )
+                if special:
+                    return special
+
             if session:
                 # 1.1 Confirmação de interrupção (usuário digitou 'menu' antes)
-                if current_screen == "confirm_menu_interrupt":
+                if is_personal and current_screen == "confirm_menu_interrupt":
+                    confirmation = nav_state.get("confirmation")
+                    if button_action and (
+                        button_action not in {"continue_form", "cancel_form_to_menu"}
+                        or getattr(activity, "value", {}).get("confirmation") != confirmation
+                    ):
+                        return build_interrupt_invalid_activity(first_name, confirmation)
                     if button_action == "continue_form" or text_lower in [
                         "continuar",
                         "continuar preenchimento",
@@ -346,7 +397,7 @@ class DynamicFormProcessor:
                         await nav_acc.delete(turn_context)
                         return await cls.reprompt_current_stage(turn_context, session, user_name)
 
-                    if button_action in ["cancel_form_to_menu", "menu"] or text_lower in [
+                    if button_action == "cancel_form_to_menu" or text_lower in [
                         "cancelar",
                         "cancelar preenchimento",
                         "cancelar e ir ao menu",
@@ -363,7 +414,7 @@ class DynamicFormProcessor:
                         return build_menu_activity(first_name)
 
                     # Não captura números ("1", "2", "0") nem respostas da pergunta atual
-                    return build_interrupt_invalid_activity(first_name)
+                    return build_interrupt_invalid_activity(first_name, confirmation)
 
                 # 1.2 Comando explícito de cancelamento
                 if text_lower in ["cancelar", "sair", "parar", "abortar"]:
@@ -375,21 +426,16 @@ class DynamicFormProcessor:
                     return build_menu_activity(first_name)
 
                 # 1.3 Usuário digitou 'menu' ou clicou em botão de navegação antigo
-                if text_lower == "menu" or button_action in ["menu", "open_ticket", "consult_tickets"]:
-                    await nav_acc.set(turn_context, {"screen": "confirm_menu_interrupt"})
+                if is_personal and (text_lower == "menu" or button_action):
+                    confirmation = uuid4().hex
+                    await nav_acc.set(turn_context, {"screen": "confirm_menu_interrupt", "confirmation": confirmation})
                     form_name = session.get("form_name", "Formulário")
-                    return build_interrupt_activity(first_name, form_name)
+                    return build_interrupt_activity(first_name, form_name, confirmation)
 
-                if button_action == "continue_form":
-                    return await cls.reprompt_current_stage(turn_context, session, user_name)
-
-                if button_action == "cancel_form_to_menu":
-                    await profile_acc.delete(turn_context)
-                    await nav_acc.set(turn_context, {"screen": "menu"})
-                    await turn_context.send_activity(
-                        f"❌ **{first_name}**, a abertura de chamado foi cancelada."
+                if text_lower in {"ajuda", "help", "?", "comandos", "socorro", "status", "sobre"}:
+                    return await cls.handle_special_commands(
+                        turn_context, text_lower, user_name, is_personal=is_personal
                     )
-                    return build_menu_activity(first_name)
 
                 # 1.4 Respostas normais do formulário em andamento
                 stage = session.get("stage", "questions")
@@ -624,6 +670,11 @@ class DynamicFormProcessor:
                 await profile_acc.set(turn_context, new_session)
                 return cls.build_confirmation_message(new_session, user_name)
 
+            if text_lower in {"oi", "ola", "olá", "hello", "hey", "eae", "eai", "opa",
+                              "bom dia", "boa tarde", "boa noite", "menu"} and not button_action:
+                await nav_acc.set(turn_context, {"screen": "menu"})
+                return build_menu_activity(first_name)
+
             # 2.2 Em conversa pessoal (1:1) com menu e navegação
             # 2.2.1 Ações explícitas de botões
             if button_action == "open_ticket":
@@ -634,7 +685,7 @@ class DynamicFormProcessor:
                 await nav_acc.set(turn_context, {"screen": "consult"})
                 return build_consult_activity()
 
-            if button_action == "menu":
+            if button_action == "menu" or text_lower == "menu":
                 await nav_acc.set(turn_context, {"screen": "menu"})
                 return build_menu_activity(first_name)
 
@@ -756,6 +807,12 @@ class DynamicFormProcessor:
                 await nav_acc.set(turn_context, {"screen": "consult"})
                 return build_consult_activity()
 
+            special_response = await cls.handle_special_commands(
+                turn_context, text_lower, user_name, is_personal=True
+            )
+            if special_response:
+                return special_response
+
             # Descrição direta de chamado sem passar pelo menu primeiro
             form_key, form_config = cls.identify_form(text_lower)
             if form_config:
@@ -816,8 +873,8 @@ class DynamicFormProcessor:
     @classmethod
     async def _finalize_session(cls, turn_context, session: dict, user_name: str) -> str:
         try:
-            profile_acc = getattr(cls, "user_profile_accessor", user_profile_accessor)
-            nav_acc = getattr(cls, "nav_state_accessor", nav_state_accessor)
+            profile_acc = user_profile_accessor
+            nav_acc = nav_state_accessor
             await profile_acc.delete(turn_context)
             await nav_acc.delete(turn_context)
 

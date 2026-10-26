@@ -30,7 +30,7 @@ def card(text, version, actions):
                for action, label in actions]
     attachments = [_card_attachment(HeroCard(text=text if offset == 0 else 'Navegação',
                     buttons=buttons[offset:offset + 5])) for offset in range(0, len(buttons), 5)]
-    return Activity(type='message', text=text, attachments=attachments)
+    return Activity(type='message', text=text if not attachments else None, attachments=attachments)
 
 
 async def reset(context):

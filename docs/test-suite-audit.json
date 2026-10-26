@@ -1,0 +1,2950 @@
+{
+  "environment": {
+    "executable": "/home/contratos/Documentos/VSCode/Bot-Teams-GLPI/venv/bin/python",
+    "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+    "dependencies": {
+      "botbuilder-core": "4.17.1",
+      "botbuilder-schema": "4.17.1",
+      "botframework-connector": "4.17.1",
+      "msrest": "0.7.1",
+      "aiohttp": "3.14.5",
+      "fastapi": "0.162.0",
+      "uvicorn": "0.54.0",
+      "requests": "2.34.2",
+      "python-dotenv": "1.2.4",
+      "PyYAML": "6.0.3",
+      "pydantic": "2.14.1",
+      "pydantic-settings": "2.16.1"
+    }
+  },
+  "note": "Historical original 187-test manifest is unavailable because tests/ was ignored; seven new regression cases reconstruct documented coverage, without asserting historical ID equivalence.",
+  "runs": {
+    "workspace": {
+      "tests": 191,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "order": "discovery",
+      "patches_restored": true,
+      "patch_leaks": [],
+      "import_mutations": [],
+      "imported_test_menu_as_package": false,
+      "sources": {
+        "main.py": "621bee3e517cb656d145a728c72664e68581f1ee8cdee4f750ed40a29ec798e4",
+        "bot/dialogs.py": "31a532e603265edb5b4da6779032df7cc8374aafe99594ed251031e2081d55cf",
+        "config.py": "19fdc5870879f637c603c1d67b59eaf66c945422cb233b9f358b5934f8567e23"
+      }
+    },
+    "reverse": {
+      "tests": 191,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "order": "reverse",
+      "patches_restored": true,
+      "patch_leaks": [],
+      "import_mutations": [],
+      "imported_test_menu_as_package": false,
+      "sources": {
+        "main.py": "621bee3e517cb656d145a728c72664e68581f1ee8cdee4f750ed40a29ec798e4",
+        "bot/dialogs.py": "31a532e603265edb5b4da6779032df7cc8374aafe99594ed251031e2081d55cf",
+        "config.py": "19fdc5870879f637c603c1d67b59eaf66c945422cb233b9f358b5934f8567e23"
+      }
+    },
+    "5c1bcb1": {
+      "tests": 187,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "order": "discovery",
+      "patches_restored": true,
+      "patch_leaks": [],
+      "import_mutations": [],
+      "imported_test_menu_as_package": false,
+      "sources": {
+        "main.py": "621bee3e517cb656d145a728c72664e68581f1ee8cdee4f750ed40a29ec798e4",
+        "bot/dialogs.py": "31a532e603265edb5b4da6779032df7cc8374aafe99594ed251031e2081d55cf",
+        "config.py": "19fdc5870879f637c603c1d67b59eaf66c945422cb233b9f358b5934f8567e23"
+      }
+    },
+    "e0579b0": {
+      "tests": 187,
+      "failures": 33,
+      "errors": 20,
+      "skipped": 0,
+      "order": "discovery",
+      "patches_restored": true,
+      "patch_leaks": [],
+      "import_mutations": [],
+      "imported_test_menu_as_package": false,
+      "sources": {
+        "main.py": "4b9ae70c0c359611c360e06357817805e6083e5fd29bbb5cc179481314205d41",
+        "bot/dialogs.py": "b0b4b7583588d214216acd008883e583f977f11381833623a764d71e4d1fcf85",
+        "config.py": "86925a555eaf9bf04c8c29bf43126984cf93e1b5475af3edda9ccbdd2ab0bb9a"
+      }
+    }
+  },
+  "reference_test_ids_equal": true,
+  "test_hashes_equal": true,
+  "reverse_ids_exact": true,
+  "count_by_module": {
+    "test_cards_sdk": 4,
+    "test_identity": 21,
+    "test_identity_sdk": 10,
+    "test_menu": 30,
+    "test_notifications": 59,
+    "test_reply_operations": 11,
+    "test_ticket_consult": 16,
+    "test_ticket_conversation": 10,
+    "test_ticket_detail": 20,
+    "test_ticket_query": 10
+  },
+  "test_ids": [
+    "test_cards_sdk.CardsSDKTests.test_all_shared_builders_through_sdk_transport",
+    "test_cards_sdk.CardsSDKTests.test_attachment_cannot_be_nested_as_a_card",
+    "test_cards_sdk.CardsSDKTests.test_open_number_and_button_each_send_once_through_endpoint_callback",
+    "test_cards_sdk.CardsSDKTests.test_text_only_query_without_actions_remains_readable",
+    "test_identity.IdentityTests.test_absent_link_never_auto_matches_email",
+    "test_identity.IdentityTests.test_cli_validates_before_activation",
+    "test_identity.IdentityTests.test_concurrent_create_has_single_winner",
+    "test_identity.IdentityTests.test_context_and_member_rejections",
+    "test_identity.IdentityTests.test_disabled_or_invalid_authentication",
+    "test_identity.IdentityTests.test_dispatch_authentication_rejection_never_calls_route",
+    "test_identity.IdentityTests.test_dispatch_denies_new_path_without_affecting_legacy",
+    "test_identity.IdentityTests.test_dispatch_legacy_does_not_resolve_or_block_on_new_configuration",
+    "test_identity.IdentityTests.test_dispatch_shared_adapter_once_preserves_response_and_context",
+    "test_identity.IdentityTests.test_glpi_denials",
+    "test_identity.IdentityTests.test_glpi_reader_http_responses",
+    "test_identity.IdentityTests.test_missing_auth_configuration",
+    "test_identity.IdentityTests.test_no_authorization_header",
+    "test_identity.IdentityTests.test_other_identity_cannot_get_link",
+    "test_identity.IdentityTests.test_persistence_audit_and_conflicts",
+    "test_identity.IdentityTests.test_raw_context_and_expired_capability",
+    "test_identity.IdentityTests.test_revocation_during_revalidation",
+    "test_identity.IdentityTests.test_revoked",
+    "test_identity.IdentityTests.test_schema_unknown_is_rejected",
+    "test_identity.IdentityTests.test_teams_failure",
+    "test_identity.IdentityTests.test_valid_identity_and_distinct_email_upn",
+    "test_identity_sdk.InstalledSDKTests.test_adapter_and_provider_real_construction",
+    "test_identity_sdk.InstalledSDKTests.test_conversation_tenant_construction_and_wire_names",
+    "test_identity_sdk.InstalledSDKTests.test_divergent_conversation_tenant_denied",
+    "test_identity_sdk.InstalledSDKTests.test_get_member_signature_and_service_delegation",
+    "test_identity_sdk.InstalledSDKTests.test_missing_channel_tenant_denied_despite_conversation_and_member",
+    "test_identity_sdk.InstalledSDKTests.test_missing_or_divergent_teams_member_tenant_denied",
+    "test_identity_sdk.InstalledSDKTests.test_optional_conversation_tenant_absent_requires_valid_other_sources",
+    "test_identity_sdk.InstalledSDKTests.test_real_adapter_authentication_failure_skips_route",
+    "test_identity_sdk.InstalledSDKTests.test_real_adapter_pipeline_with_simulated_authentication",
+    "test_identity_sdk.InstalledSDKTests.test_real_model_fields_and_claims_shape",
+    "test_menu.MenuAndFormsTests.test_cancel_button_without_pending_confirmation_preserves_form",
+    "test_menu.MenuAndFormsTests.test_cancel_command_clears_form_and_shows_menu",
+    "test_menu.MenuAndFormsTests.test_cancel_during_interrupt_clears_form_and_shows_menu",
+    "test_menu.MenuAndFormsTests.test_channel_form_menu_never_exposes_personal_card",
+    "test_menu.MenuAndFormsTests.test_continue_in_attachments_preserves_attachments",
+    "test_menu.MenuAndFormsTests.test_continue_reprompts_current_stage",
+    "test_menu.MenuAndFormsTests.test_continue_reprompts_form_confirmation_with_answers_intact",
+    "test_menu.MenuAndFormsTests.test_direct_description_without_menu_opens_form",
+    "test_menu.MenuAndFormsTests.test_endpoint_direct_form_requires_legacy_authorization",
+    "test_menu.MenuAndFormsTests.test_endpoint_menu_skips_legacy_lookup_and_sends_once",
+    "test_menu.MenuAndFormsTests.test_greetings_in_channel_preserves_legacy_greeting",
+    "test_menu.MenuAndFormsTests.test_greetings_show_menu_in_personal_conversation",
+    "test_menu.MenuAndFormsTests.test_invalid_input_in_menu",
+    "test_menu.MenuAndFormsTests.test_invalid_payload_text_cannot_advance_form",
+    "test_menu.MenuAndFormsTests.test_menu_during_form_prompts_confirmation_without_losing_state",
+    "test_menu.MenuAndFormsTests.test_numbers_during_form_are_form_answers_not_menu",
+    "test_menu.MenuAndFormsTests.test_option_1_routes_to_form_confirmation",
+    "test_menu.MenuAndFormsTests.test_option_2_never_calls_glpi_or_authorizes",
+    "test_menu.MenuAndFormsTests.test_regression_form_cadastro_authorized_and_denied",
+    "test_menu.MenuAndFormsTests.test_regression_form_flexsmart_complete_flow",
+    "test_menu.MenuAndFormsTests.test_regression_form_manutencao_complete_flow",
+    "test_menu.MenuAndFormsTests.test_repeated_clicks_and_untrusted_payloads",
+    "test_menu.MenuAndFormsTests.test_return_zero_from_open_ticket_and_consult",
+    "test_menu.MenuAndFormsTests.test_select_option_1_by_button_click",
+    "test_menu.MenuAndFormsTests.test_select_option_1_by_number",
+    "test_menu.MenuAndFormsTests.test_select_option_2_by_button_click",
+    "test_menu.MenuAndFormsTests.test_select_option_2_by_number",
+    "test_menu.MenuAndFormsTests.test_stale_interrupt_confirmation_cannot_cancel",
+    "test_menu.MenuAndFormsTests.test_unidentified_description_stays_in_open_ticket",
+    "test_menu.MenuAndFormsTests.test_user_isolation",
+    "test_notifications.ActionTests.test_click_revalidates_requester_and_denies_without_content",
+    "test_notifications.ActionTests.test_copied_button_no_access_even_when_ticket_service_would_allow",
+    "test_notifications.ActionTests.test_disabled_notifications_do_not_capture_draft_button_text",
+    "test_notifications.ActionTests.test_draft_click_never_becomes_text_or_sends_and_can_continue",
+    "test_notifications.ActionTests.test_form_preserved_until_explicit_current_confirmation",
+    "test_notifications.ActionTests.test_leave_preserves_draft_and_original_deadline_and_resume",
+    "test_notifications.ActionTests.test_old_confirmation_does_not_leave_new_draft",
+    "test_notifications.ActionTests.test_tampered_payload_and_stale_generation",
+    "test_notifications.ActionTests.test_valid_notification_opens_existing_authorized_details",
+    "test_notifications.GLPIContractTests.test_incomplete_paging_never_returns_partial_baseline",
+    "test_notifications.GLPIContractTests.test_other_requester_and_closed_deleted_ticket_denied",
+    "test_notifications.GLPIContractTests.test_snapshot_complete_paging_and_specific_followup",
+    "test_notifications.GLPIContractTests.test_technician_observer_group_do_not_grant_access",
+    "test_notifications.GLPIContractTests.test_user_inactive_unknown_deleted_are_not_authorized",
+    "test_notifications.GLPIContractTests.test_wrong_parent_or_missing_creation_date_fails_closed",
+    "test_notifications.IngressNotificationTests.test_capture_io_failure_is_swallowed_and_disables_reference",
+    "test_notifications.IngressNotificationTests.test_legacy_menu_can_ignore_resolver_and_no_database_registration",
+    "test_notifications.IngressNotificationTests.test_resolver_reused_once_and_reference_captured_once",
+    "test_notifications.IngressNotificationTests.test_unauthenticated_activity_never_captures_reference",
+    "test_notifications.StoreTests.test_button_bound_to_identity_revision_generation_application",
+    "test_notifications.StoreTests.test_cleanup_does_not_remove_current_watermark",
+    "test_notifications.StoreTests.test_concurrent_event_deduplication_and_reservation",
+    "test_notifications.StoreTests.test_configuration_defaults_and_incomplete_block_only_notifications",
+    "test_notifications.StoreTests.test_first_activation_and_new_ticket_baseline",
+    "test_notifications.StoreTests.test_only_one_worker_lease_and_expired_recovery",
+    "test_notifications.StoreTests.test_private_later_public_and_edits_do_not_replay",
+    "test_notifications.StoreTests.test_queue_and_watermark_rollback_together",
+    "test_notifications.StoreTests.test_recovery_reserved_is_safe_submitting_is_uncertain",
+    "test_notifications.StoreTests.test_reentering_ticket_baselines_again",
+    "test_notifications.StoreTests.test_reference_update_keeps_generation_pause_resume_fresh_baseline",
+    "test_notifications.StoreTests.test_replacement_uid_rejects_old_result",
+    "test_notifications.StoreTests.test_revocation_and_reactivation_rotate_generation",
+    "test_notifications.StoreTests.test_schema_v2_migration_preserves_every_existing_table",
+    "test_notifications.StoreTests.test_support_policy_fails_closed",
+    "test_notifications.WorkerTests.test_bounded_ticket_work_rotates_unseen_tickets",
+    "test_notifications.WorkerTests.test_capture_personal_reference_and_failure_disables_only_notifications",
+    "test_notifications.WorkerTests.test_confirmed_throttle_retry_after",
+    "test_notifications.WorkerTests.test_crash_after_marker_recovers_uncertain",
+    "test_notifications.WorkerTests.test_definitively_invalid_reference_disables_recipient",
+    "test_notifications.WorkerTests.test_first_cycle_baseline_never_sends_history",
+    "test_notifications.WorkerTests.test_glpi_timeout_is_temporary_no_send",
+    "test_notifications.WorkerTests.test_incomplete_initial_snapshot_never_commits_baseline",
+    "test_notifications.WorkerTests.test_known_pre_send_failure_backoff_and_attempt_limit",
+    "test_notifications.WorkerTests.test_link_changed_during_connector_preparation_is_blocked",
+    "test_notifications.WorkerTests.test_message_became_private_before_send",
+    "test_notifications.WorkerTests.test_missing_receipt_is_uncertain",
+    "test_notifications.WorkerTests.test_private_between_preflight_and_actual_send_is_blocked",
+    "test_notifications.WorkerTests.test_private_unknown_user_integration_and_reply_receipts_excluded",
+    "test_notifications.WorkerTests.test_public_support_followup_correct_recipient_and_no_body",
+    "test_notifications.WorkerTests.test_queue_limit_does_not_advance_watermark",
+    "test_notifications.WorkerTests.test_revalidation_inactive_closed_or_requester_removed",
+    "test_notifications.WorkerTests.test_revoked_link_before_send",
+    "test_notifications.WorkerTests.test_sdk_real_adapter_composition_mocked_connector",
+    "test_notifications.WorkerTests.test_sending_does_not_mutate_form_or_draft_accessors",
+    "test_notifications.WorkerTests.test_simulation_observes_but_does_not_reserve_or_send",
+    "test_notifications.WorkerTests.test_sql_transactions_not_held_during_network",
+    "test_notifications.WorkerTests.test_teams_timeout_after_possible_delivery_uncertain_never_replayed",
+    "test_notifications.WorkerTests.test_two_recipients_only_receive_their_own_ticket",
+    "test_notifications.WorkerTests.test_two_worker_instances_do_not_run_together",
+    "test_reply_operations.ReplyOperationTests.test_concurrent_double_click_one_post_and_restart_no_repost",
+    "test_reply_operations.ReplyOperationTests.test_empty_and_overlimit_rejected_without_truncation",
+    "test_reply_operations.ReplyOperationTests.test_expiration_retention_cleanup_and_cancel",
+    "test_reply_operations.ReplyOperationTests.test_migration_v1_preserves_links_and_audit",
+    "test_reply_operations.ReplyOperationTests.test_no_transaction_held_across_http",
+    "test_reply_operations.ReplyOperationTests.test_other_identity_conversation_or_ticket_cannot_reserve_or_read",
+    "test_reply_operations.ReplyOperationTests.test_process_crash_reserved_or_submitting_never_blind_retry",
+    "test_reply_operations.ReplyOperationTests.test_revocation_between_resolution_and_reservation_or_fence",
+    "test_reply_operations.ReplyOperationTests.test_revoked_then_reapproved_same_glpi_user_invalidates_old_draft",
+    "test_reply_operations.ReplyOperationTests.test_timeout_after_possible_write_uncertain_never_reposts",
+    "test_reply_operations.ReplyOperationTests.test_timeout_before_post_recoverable_preserves_body",
+    "test_ticket_consult.ConsultTests.test_arbitrary_id_and_payload_extra_fields_denied",
+    "test_ticket_consult.ConsultTests.test_conversation_isolation",
+    "test_ticket_consult.ConsultTests.test_empty_and_error_are_different",
+    "test_ticket_consult.ConsultTests.test_exit_invalidates_list",
+    "test_ticket_consult.ConsultTests.test_expiration_restart_and_recovery_buttons",
+    "test_ticket_consult.ConsultTests.test_form_keeps_answers_attachments_and_does_not_resolve",
+    "test_ticket_consult.ConsultTests.test_identity_replaced_denies_old_selection",
+    "test_ticket_consult.ConsultTests.test_no_legacy_lookup_for_consult_operations",
+    "test_ticket_consult.ConsultTests.test_nonpersonal_never_resolves",
+    "test_ticket_consult.ConsultTests.test_pages_previous_refresh_stable_numbering",
+    "test_ticket_consult.ConsultTests.test_requester_removed_or_closed",
+    "test_ticket_consult.ConsultTests.test_revocation_and_identity_failures",
+    "test_ticket_consult.ConsultTests.test_select_number_and_button_only_page_item",
+    "test_ticket_consult.ConsultTests.test_stale_button_after_refresh_or_next_page",
+    "test_ticket_consult.ConsultTests.test_untrusted_title_never_contains_markup_links_mentions",
+    "test_ticket_consult.ConsultTests.test_user_isolation",
+    "test_ticket_conversation.ConversationTests.test_author_unidentified_does_not_become_technician",
+    "test_ticket_conversation.ConversationTests.test_details_own_ticket_only",
+    "test_ticket_conversation.ConversationTests.test_empty_public_collection_and_incomplete_page",
+    "test_ticket_conversation.ConversationTests.test_history_error_is_not_empty",
+    "test_ticket_conversation.ConversationTests.test_long_html_entities_scripts_links_mentions_no_remote_fetch",
+    "test_ticket_conversation.ConversationTests.test_mixed_parent_or_unsupported_itemtype_fails_entire_result",
+    "test_ticket_conversation.ConversationTests.test_public_history_pagination_order_and_unknown_privacy",
+    "test_ticket_conversation.ConversationTests.test_removed_requester_closed_deleted_block_before_post",
+    "test_ticket_conversation.ConversationTests.test_reply_public_existing_ticket_native_author_origin_and_no_extra_writes",
+    "test_ticket_conversation.ConversationTests.test_timeout_invalid_success_redirect_and_http_error_uncertain_no_retry",
+    "test_ticket_detail.DetailFlowTests.test_attachment_empty_and_oversize_rejected",
+    "test_ticket_detail.DetailFlowTests.test_capture_common_words_and_numbers_are_literal_drafts_preserve_case",
+    "test_ticket_detail.DetailFlowTests.test_description_and_message_long_content_not_silently_truncated",
+    "test_ticket_detail.DetailFlowTests.test_detail_and_history_navigation_revalidates_each_operation",
+    "test_ticket_detail.DetailFlowTests.test_double_click_and_replay_do_not_send_twice",
+    "test_ticket_detail.DetailFlowTests.test_draft_and_button_copied_to_other_user_or_conversation_denied",
+    "test_ticket_detail.DetailFlowTests.test_draft_content_not_logged",
+    "test_ticket_detail.DetailFlowTests.test_edit_cancel_and_confirm_payload_bound_to_draft",
+    "test_ticket_detail.DetailFlowTests.test_explicit_cancel_draft",
+    "test_ticket_detail.DetailFlowTests.test_foreign_id_old_button_and_draft_payload_mismatch",
+    "test_ticket_detail.DetailFlowTests.test_global_error_handler_redacts_sensitive_text_and_exception",
+    "test_ticket_detail.DetailFlowTests.test_history_empty_and_failure_not_conflated",
+    "test_ticket_detail.DetailFlowTests.test_opening_form_answers_and_attachments_preserved",
+    "test_ticket_detail.DetailFlowTests.test_pre_post_failure_preserves_draft_and_expired_draft_cannot_send",
+    "test_ticket_detail.DetailFlowTests.test_read_failure_preserves_confirm_screen_and_can_retry",
+    "test_ticket_detail.DetailFlowTests.test_reserved_operation_cannot_be_cancelled_or_edited_as_if_unsent",
+    "test_ticket_detail.DetailFlowTests.test_restart_old_draft_button_does_not_send_or_expose_content",
+    "test_ticket_detail.DetailFlowTests.test_return_to_list_requeries_and_old_list_button_cannot_select",
+    "test_ticket_detail.DetailFlowTests.test_revocation_replacement_inactive_user_and_ownership_loss_before_send",
+    "test_ticket_detail.DetailFlowTests.test_timeout_after_fence_uncertain_no_resend",
+    "test_ticket_query.QueryTests.test_allowed_statuses_only_and_stable_order_portal_origin",
+    "test_ticket_query.QueryTests.test_deleted_and_unknown_status",
+    "test_ticket_query.QueryTests.test_empty",
+    "test_ticket_query.QueryTests.test_error_timeout_redirect_and_malformed_not_empty",
+    "test_ticket_query.QueryTests.test_failed_later_search_page_discards_results_and_closes_session",
+    "test_ticket_query.QueryTests.test_incomplete_relation_page_not_absence",
+    "test_ticket_query.QueryTests.test_incomplete_search_page_and_limit",
+    "test_ticket_query.QueryTests.test_other_requester_technician_observer_and_group_do_not_authorize",
+    "test_ticket_query.QueryTests.test_requester_on_second_relation_page",
+    "test_ticket_query.QueryTests.test_selection_rechecks_closed_removed_and_deleted"
+  ],
+  "test_hashes": {
+    "tests/run_suite_audit.py": "52a115611b4c47d1de76803a3765f689e4d6ceab1e7a3661586b0105bcb0e9e4",
+    "tests/support.py": "b17e192cbe5807996e84975f90652db6c8da75226cbe6e79d4a7052d02c85ff0",
+    "tests/test_cards_sdk.py": "041633072302bb0be6f6fa8f5b727f4b823a414216b7799bcdfa44d3398226ba",
+    "tests/test_identity.py": "b93b67fd16e56a8dd52be1fc4e71b3fb959adc633acf4a9396037d6f5f3337a4",
+    "tests/test_identity_sdk.py": "b48addb81bfc5a615af3d9bc347088031478f7101e7c255b7470de82c55e8d48",
+    "tests/test_menu.py": "e14b58564607d81b81ac6fd332cf416c732b1a03a2c8dbfd8808e47ed79407d6",
+    "tests/test_notifications.py": "b0ed7206079652f567afc8edf26a371681dcc628e6d046fac70229b0e14ca970",
+    "tests/test_reply_operations.py": "4884d6475dee945b93f5f26d90a094d91d4704d6b06b7007a3beb93323bc8c73",
+    "tests/test_ticket_consult.py": "0175474b1aae995bc7cbb5245340cbc7cc7b6d4cdb12a6ecf8993e7998bb5ec1",
+    "tests/test_ticket_conversation.py": "e4464556c9cbe13bd7bce899ec07d7281fc0dc331d813838b114b09ef1d938ab",
+    "tests/test_ticket_detail.py": "35496ffe93ea7f8ccc5fac4f13bc630102caffa3b83a8ab175b63c3172e83c3b",
+    "tests/test_ticket_query.py": "1810bc37936bf39d876d30e40febc6c7bbc9d3b915504026bbbc785a703ae6ab"
+  },
+  "previous_failed_run_comparison": {
+    "records": 47,
+    "same_id_exception_message_and_last_frame": [
+      "test_notifications.ActionTests.test_leave_preserves_draft_and_original_deadline_and_resume",
+      "test_notifications.ActionTests.test_old_confirmation_does_not_leave_new_draft",
+      "test_ticket_consult.ConsultTests.test_arbitrary_id_and_payload_extra_fields_denied",
+      "test_ticket_consult.ConsultTests.test_exit_invalidates_list",
+      "test_ticket_consult.ConsultTests.test_no_legacy_lookup_for_consult_operations",
+      "test_ticket_consult.ConsultTests.test_stale_button_after_refresh_or_next_page",
+      "test_ticket_detail.DetailFlowTests.test_capture_common_words_and_numbers_are_literal_drafts_preserve_case",
+      "test_ticket_detail.DetailFlowTests.test_double_click_and_replay_do_not_send_twice",
+      "test_ticket_detail.DetailFlowTests.test_draft_and_button_copied_to_other_user_or_conversation_denied",
+      "test_ticket_detail.DetailFlowTests.test_explicit_cancel_draft",
+      "test_ticket_detail.DetailFlowTests.test_foreign_id_old_button_and_draft_payload_mismatch",
+      "test_ticket_detail.DetailFlowTests.test_read_failure_preserves_confirm_screen_and_can_retry",
+      "test_ticket_detail.DetailFlowTests.test_reserved_operation_cannot_be_cancelled_or_edited_as_if_unsent",
+      "test_ticket_detail.DetailFlowTests.test_restart_old_draft_button_does_not_send_or_expose_content",
+      "test_ticket_detail.DetailFlowTests.test_timeout_after_fence_uncertain_no_resend",
+      "test_notifications.ActionTests.test_click_revalidates_requester_and_denies_without_content",
+      "test_notifications.ActionTests.test_copied_button_no_access_even_when_ticket_service_would_allow",
+      "test_notifications.ActionTests.test_draft_click_never_becomes_text_or_sends_and_can_continue",
+      "test_notifications.ActionTests.test_form_preserved_until_explicit_current_confirmation",
+      "test_notifications.ActionTests.test_tampered_payload_and_stale_generation",
+      "test_notifications.ActionTests.test_valid_notification_opens_existing_authorized_details",
+      "test_ticket_consult.ConsultTests.test_conversation_isolation",
+      "test_ticket_consult.ConsultTests.test_empty_and_error_are_different",
+      "test_ticket_consult.ConsultTests.test_expiration_restart_and_recovery_buttons",
+      "test_ticket_consult.ConsultTests.test_identity_replaced_denies_old_selection",
+      "test_ticket_consult.ConsultTests.test_pages_previous_refresh_stable_numbering",
+      "test_ticket_consult.ConsultTests.test_requester_removed_or_closed",
+      "test_ticket_consult.ConsultTests.test_revocation_and_identity_failures (code='link_revoked')",
+      "test_ticket_consult.ConsultTests.test_revocation_and_identity_failures (code='link_missing')",
+      "test_ticket_consult.ConsultTests.test_revocation_and_identity_failures (code='authentication_configuration')",
+      "test_ticket_consult.ConsultTests.test_revocation_and_identity_failures (code='authentication_disabled')",
+      "test_ticket_consult.ConsultTests.test_revocation_and_identity_failures (code='identity_mismatch')",
+      "test_ticket_consult.ConsultTests.test_select_number_and_button_only_page_item",
+      "test_ticket_consult.ConsultTests.test_user_isolation",
+      "test_ticket_detail.DetailFlowTests.test_attachment_empty_and_oversize_rejected",
+      "test_ticket_detail.DetailFlowTests.test_description_and_message_long_content_not_silently_truncated",
+      "test_ticket_detail.DetailFlowTests.test_detail_and_history_navigation_revalidates_each_operation",
+      "test_ticket_detail.DetailFlowTests.test_draft_content_not_logged",
+      "test_ticket_detail.DetailFlowTests.test_edit_cancel_and_confirm_payload_bound_to_draft",
+      "test_ticket_detail.DetailFlowTests.test_history_empty_and_failure_not_conflated",
+      "test_ticket_detail.DetailFlowTests.test_pre_post_failure_preserves_draft_and_expired_draft_cannot_send",
+      "test_ticket_detail.DetailFlowTests.test_return_to_list_requeries_and_old_list_button_cannot_select",
+      "test_ticket_detail.DetailFlowTests.test_revocation_replacement_inactive_user_and_ownership_loss_before_send"
+    ],
+    "changed": [
+      {
+        "id": "test_ticket_detail.DetailFlowTests.test_global_error_handler_redacts_sensitive_text_and_exception",
+        "old_exception": "NameError",
+        "new_exception": "AssertionError",
+        "new_message": "Expected mock to not have been awaited. Awaited 1 times."
+      }
+    ],
+    "now_pass": [
+      "test_menu.MenuAndFormsTests.test_option_2_never_calls_glpi_or_authorizes",
+      "test_menu.MenuAndFormsTests.test_select_option_2_by_button_click",
+      "test_menu.MenuAndFormsTests.test_select_option_2_by_number"
+    ]
+  },
+  "regressed_revision_results": [
+    {
+      "id": "test_menu.MenuAndFormsTests.test_cancel_button_without_pending_confirmation_preserves_form",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "None != {'form_key': 'manutencao', 'form_id': 1, [129 chars]: []}",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_menu.py",
+          "function": "test_cancel_button_without_pending_confirmation_preserves_form",
+          "line": 742,
+          "code": "self.assertEqual(await self.mock_user_profile.get(ctx), before)"
+        }
+      ]
+    },
+    {
+      "id": "test_menu.MenuAndFormsTests.test_cancel_during_interrupt_clears_form_and_shows_menu",
+      "status": "error",
+      "exception": "KeyError",
+      "message": "'confirmation'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_menu.py",
+          "function": "test_cancel_during_interrupt_clears_form_and_shows_menu",
+          "line": 476,
+          "code": "resp = await self.send(ctx, value={\"action\": \"cancel_form_to_menu\", \"confirmation\": (await self.mock_nav_state.get(ctx))[\"confirmation\"]})"
+        }
+      ]
+    },
+    {
+      "id": "test_menu.MenuAndFormsTests.test_channel_form_menu_never_exposes_personal_card",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "<botbuilder.schema._models_py3.Activity object at 0xADDRESS> is not an instance of <class 'str'>",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_menu.py",
+          "function": "test_channel_form_menu_never_exposes_personal_card",
+          "line": 748,
+          "code": "self.assertIsInstance(response, str)"
+        }
+      ]
+    },
+    {
+      "id": "test_menu.MenuAndFormsTests.test_continue_in_attachments_preserves_attachments",
+      "status": "error",
+      "exception": "KeyError",
+      "message": "'confirmation'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_menu.py",
+          "function": "test_continue_in_attachments_preserves_attachments",
+          "line": 438,
+          "code": "resp_cont = await self.send(ctx, value={\"action\": \"continue_form\", \"confirmation\": (await self.mock_nav_state.get(ctx))[\"confirmation\"]})"
+        }
+      ]
+    },
+    {
+      "id": "test_menu.MenuAndFormsTests.test_continue_reprompts_form_confirmation_with_answers_intact",
+      "status": "error",
+      "exception": "KeyError",
+      "message": "'confirmation'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_menu.py",
+          "function": "test_continue_reprompts_form_confirmation_with_answers_intact",
+          "line": 758,
+          "code": "token = (await self.mock_nav_state.get(ctx))[\"confirmation\"]"
+        }
+      ]
+    },
+    {
+      "id": "test_menu.MenuAndFormsTests.test_endpoint_menu_skips_legacy_lookup_and_sends_once",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "legacy_forbidden",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_menu.py",
+          "function": "test_endpoint_menu_skips_legacy_lookup_and_sends_once",
+          "line": 784,
+          "code": "await self.endpoint_callback()(ctx)"
+        },
+        {
+          "file": "main.py",
+          "function": "logic_process_message",
+          "line": 98,
+          "code": "is_authorized, user_email, auth_message = UserAuthorization.validate_user("
+        },
+        {
+          "file": "mock.py",
+          "function": "__call__",
+          "line": 1134,
+          "code": "return self._mock_call(*args, **kwargs)"
+        },
+        {
+          "file": "mock.py",
+          "function": "_mock_call",
+          "line": 1138,
+          "code": "return self._execute_mock_call(*args, **kwargs)"
+        },
+        {
+          "file": "mock.py",
+          "function": "_execute_mock_call",
+          "line": 1193,
+          "code": "raise effect"
+        }
+      ]
+    },
+    {
+      "id": "test_menu.MenuAndFormsTests.test_invalid_payload_text_cannot_advance_form",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "'Opção inválida' not found in '✅ **Perfeito, João Silva!** Identifiquei a solicitação: **Solicitações de Manutenção**.\\n\\n📌 **Joao, Qual o tipo da solicitação?**\\n\\n**1** - Manutenção de Equipamentos\\n**2** - Manutenção de Sistemas\\n**3** - Acessos\\n\\n*(Digite o número ou o nome da opção)*'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_menu.py",
+          "function": "test_invalid_payload_text_cannot_advance_form",
+          "line": 719,
+          "code": "self.assertIn(\"Opção inválida\", get_text(response))"
+        }
+      ]
+    },
+    {
+      "id": "test_menu.MenuAndFormsTests.test_stale_interrupt_confirmation_cannot_cancel",
+      "status": "error",
+      "exception": "KeyError",
+      "message": "'confirmation'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_menu.py",
+          "function": "test_stale_interrupt_confirmation_cannot_cancel",
+          "line": 728,
+          "code": "old = (await self.mock_nav_state.get(ctx))[\"confirmation\"]"
+        }
+      ]
+    },
+    {
+      "id": "test_notifications.ActionTests.test_click_revalidates_requester_and_denies_without_content",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "'não está mais disponível' not found in '👋 Olá, Pessoa! Como posso ajudar?\\n\\n1 — Abrir um chamado\\n2 — Consultar meus chamados\\n\\nToque em uma opção ou digite o número.'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_notifications.py",
+          "function": "test_click_revalidates_requester_and_denies_without_content",
+          "line": 703,
+          "code": "self.assertIn('não está mais disponível', get_text(await self.handle()))"
+        }
+      ]
+    },
+    {
+      "id": "test_notifications.ActionTests.test_copied_button_no_access_even_when_ticket_service_would_allow",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "'não está mais disponível' not found in '👋 Olá, Pessoa! Como posso ajudar?\\n\\n1 — Abrir um chamado\\n2 — Consultar meus chamados\\n\\nToque em uma opção ou digite o número.'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_notifications.py",
+          "function": "test_copied_button_no_access_even_when_ticket_service_would_allow",
+          "line": 611,
+          "code": "self.assertIn('não está mais disponível', get_text(result))"
+        }
+      ]
+    },
+    {
+      "id": "test_notifications.ActionTests.test_draft_click_never_becomes_text_or_sends_and_can_continue",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "'Existe uma resposta em preenchimento' not found in '⚠️ Opção inválida. Escolha uma das opções:\\n\\n1 — Abrir um chamado\\n0 — Voltar ao menu'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_notifications.py",
+          "function": "test_draft_click_never_becomes_text_or_sends_and_can_continue",
+          "line": 654,
+          "code": "self.assertIn('Existe uma resposta em preenchimento', get_text(response))"
+        }
+      ]
+    },
+    {
+      "id": "test_notifications.ActionTests.test_form_preserved_until_explicit_current_confirmation",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "'Continuar preenchimento' not found in \"📎 **Pessoa**, antes de finalizar: deseja anexar algum **arquivo** a este chamado (print, foto, pdf, etc.)?\\n\\nResponda **'sim'** ou **'não'**.\"",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_notifications.py",
+          "function": "test_form_preserved_until_explicit_current_confirmation",
+          "line": 628,
+          "code": "self.assertIn('Continuar preenchimento', get_text(result))"
+        }
+      ]
+    },
+    {
+      "id": "test_notifications.ActionTests.test_leave_preserves_draft_and_original_deadline_and_resume",
+      "status": "error",
+      "exception": "TypeError",
+      "message": "'NoneType' object is not subscriptable",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_notifications.py",
+          "function": "test_leave_preserves_draft_and_original_deadline_and_resume",
+          "line": 668,
+          "code": "self.context.activity.value = {'notification_choice': 'leave', 'token': pending['notification_pending']['token']}"
+        }
+      ]
+    },
+    {
+      "id": "test_notifications.ActionTests.test_old_confirmation_does_not_leave_new_draft",
+      "status": "error",
+      "exception": "TypeError",
+      "message": "'NoneType' object is not subscriptable",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_notifications.py",
+          "function": "test_old_confirmation_does_not_leave_new_draft",
+          "line": 689,
+          "code": "self.context.activity.value = {'notification_choice': 'leave', 'token': pending['notification_pending']['token']}"
+        }
+      ]
+    },
+    {
+      "id": "test_notifications.ActionTests.test_tampered_payload_and_stale_generation",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "'não está mais disponível' not found in '👋 Olá, Pessoa! Como posso ajudar?\\n\\n1 — Abrir um chamado\\n2 — Consultar meus chamados\\n\\nToque em uma opção ou digite o número.'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_notifications.py",
+          "function": "test_tampered_payload_and_stale_generation",
+          "line": 617,
+          "code": "self.assertIn('não está mais disponível', get_text(await self.handle()))"
+        }
+      ]
+    },
+    {
+      "id": "test_notifications.ActionTests.test_valid_notification_opens_existing_authorized_details",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "'Solicitação inicial' not found in '👋 Olá, Pessoa! Como posso ajudar?\\n\\n1 — Abrir um chamado\\n2 — Consultar meus chamados\\n\\nToque em uma opção ou digite o número.'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_notifications.py",
+          "function": "test_valid_notification_opens_existing_authorized_details",
+          "line": 602,
+          "code": "self.assertIn('Solicitação inicial', get_text(result))"
+        }
+      ]
+    },
+    {
+      "id": "test_notifications.StoreTests.test_configuration_defaults_and_incomplete_block_only_notifications",
+      "status": "error",
+      "exception": "KeyError",
+      "message": "'NOTIFICATIONS_ENABLED'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "case.py",
+          "function": "_callTestMethod",
+          "line": 589,
+          "code": "if method() is not None:"
+        },
+        {
+          "file": "tests/test_notifications.py",
+          "function": "test_configuration_defaults_and_incomplete_block_only_notifications",
+          "line": 221,
+          "code": "self.assertEqual(Settings.model_fields[name].default, expected)"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_consult.ConsultTests.test_arbitrary_id_and_payload_extra_fields_denied",
+      "status": "error",
+      "exception": "KeyError",
+      "message": "'version'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_ticket_consult.py",
+          "function": "test_arbitrary_id_and_payload_extra_fields_denied",
+          "line": 71,
+          "code": "await self.send(payload={'query': '1', 'version': state['version'], 'id': 99})"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_consult.ConsultTests.test_conversation_isolation",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "'expirou' not found in '📝 Vamos abrir seu chamado! Descreva o que você precisa.\\n\\nExemplos:\\n• Problema na impressora\\n• Problema no FlexSmart\\n• Cadastro de novo colaborador\\n\\n0 — Voltar ao menu'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_ticket_consult.py",
+          "function": "test_conversation_isolation",
+          "line": 95,
+          "code": "self.assertIn('expirou', get_text(await self.send('1')))"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_consult.ConsultTests.test_empty_and_error_are_different",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "'não tem chamados em aberto' not found in 'Não consegui confirmar seu acesso aos chamados. Entre em contato com o suporte de TI.\\n\\n0 — Voltar ao menu'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_ticket_consult.py",
+          "function": "test_empty_and_error_are_different",
+          "line": 129,
+          "code": "self.assertIn('não tem chamados em aberto', get_text(await self.send('2')))"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_consult.ConsultTests.test_exit_invalidates_list",
+      "status": "error",
+      "exception": "KeyError",
+      "message": "'version'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_ticket_consult.py",
+          "function": "test_exit_invalidates_list",
+          "line": 141,
+          "code": "self.assertIn('expirou', get_text(await self.send(payload={'query': '1', 'version': state['version']})))"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_consult.ConsultTests.test_expiration_restart_and_recovery_buttons",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "'expirou' not found in '📝 Vamos abrir seu chamado! Descreva o que você precisa.\\n\\nExemplos:\\n• Problema na impressora\\n• Problema no FlexSmart\\n• Cadastro de novo colaborador\\n\\n0 — Voltar ao menu'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_ticket_consult.py",
+          "function": "test_expiration_restart_and_recovery_buttons",
+          "line": 86,
+          "code": "self.assertIn('expirou', get_text(await self.send('1')))"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_consult.ConsultTests.test_identity_replaced_denies_old_selection",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "'expirou' not found in '📝 Vamos abrir seu chamado! Descreva o que você precisa.\\n\\nExemplos:\\n• Problema na impressora\\n• Problema no FlexSmart\\n• Cadastro de novo colaborador\\n\\n0 — Voltar ao menu'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_ticket_consult.py",
+          "function": "test_identity_replaced_denies_old_selection",
+          "line": 101,
+          "code": "self.assertIn('expirou', get_text(await self.send('1')))"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_consult.ConsultTests.test_no_legacy_lookup_for_consult_operations",
+      "status": "error",
+      "exception": "AttributeError",
+      "message": "type object 'DynamicFormProcessor' has no attribute 'needs_legacy_authorization'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_ticket_consult.py",
+          "function": "test_no_legacy_lookup_for_consult_operations",
+          "line": 163,
+          "code": "self.assertFalse(await dialogs.DynamicFormProcessor.needs_legacy_authorization(self.ctx))"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_consult.ConsultTests.test_pages_previous_refresh_stable_numbering",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "'1 — Portal 12' not found in 'Não consegui confirmar seu acesso aos chamados. Entre em contato com o suporte de TI.\\n\\n0 — Voltar ao menu'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_ticket_consult.py",
+          "function": "test_pages_previous_refresh_stable_numbering",
+          "line": 46,
+          "code": "self.assertIn('1 — Portal 12', text)"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_consult.ConsultTests.test_requester_removed_or_closed",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "'Esse chamado não está disponível para consulta. Atualize a lista.' not found in '📝 Vamos abrir seu chamado! Descreva o que você precisa.\\n\\nExemplos:\\n• Problema na impressora\\n• Problema no FlexSmart\\n• Cadastro de novo colaborador\\n\\n0 — Voltar ao menu'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_ticket_consult.py",
+          "function": "test_requester_removed_or_closed",
+          "line": 124,
+          "code": "self.assertIn(consult.UNAVAILABLE, get_text(await self.send('1')))"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_consult.ConsultTests.test_revocation_and_identity_failures (code='link_revoked')",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "'Não consegui confirmar seu acesso aos chamados. Entre em contato com o suporte de TI.' not found in '📝 Vamos abrir seu chamado! Descreva o que você precisa.\\n\\nExemplos:\\n• Problema na impressora\\n• Problema no FlexSmart\\n• Cadastro de novo colaborador\\n\\n0 — Voltar ao menu'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "subTest",
+          "line": 539,
+          "code": "yield"
+        },
+        {
+          "file": "tests/test_ticket_consult.py",
+          "function": "test_revocation_and_identity_failures",
+          "line": 116,
+          "code": "self.assertIn(consult.DENIED, get_text(await self.send('1')))"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_consult.ConsultTests.test_revocation_and_identity_failures (code='link_missing')",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "'Não consegui confirmar seu acesso aos chamados. Entre em contato com o suporte de TI.' not found in '❌ **Joao**, não consegui identificar sua solicitação.\\n\\nPor favor, tente descrever com palavras como:\\n• **manutenção**, **impressora**, **computador**\\n• **FlexSmart**, **erro flex**\\n• **cadastro**, **admissão**\\n\\n0 — Voltar ao menu'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "subTest",
+          "line": 539,
+          "code": "yield"
+        },
+        {
+          "file": "tests/test_ticket_consult.py",
+          "function": "test_revocation_and_identity_failures",
+          "line": 116,
+          "code": "self.assertIn(consult.DENIED, get_text(await self.send('1')))"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_consult.ConsultTests.test_revocation_and_identity_failures (code='authentication_configuration')",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "'Não consegui confirmar seu acesso aos chamados. Entre em contato com o suporte de TI.' not found in '❌ **Joao**, não consegui identificar sua solicitação.\\n\\nPor favor, tente descrever com palavras como:\\n• **manutenção**, **impressora**, **computador**\\n• **FlexSmart**, **erro flex**\\n• **cadastro**, **admissão**\\n\\n0 — Voltar ao menu'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "subTest",
+          "line": 539,
+          "code": "yield"
+        },
+        {
+          "file": "tests/test_ticket_consult.py",
+          "function": "test_revocation_and_identity_failures",
+          "line": 116,
+          "code": "self.assertIn(consult.DENIED, get_text(await self.send('1')))"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_consult.ConsultTests.test_revocation_and_identity_failures (code='authentication_disabled')",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "'Não consegui confirmar seu acesso aos chamados. Entre em contato com o suporte de TI.' not found in '❌ **Joao**, não consegui identificar sua solicitação.\\n\\nPor favor, tente descrever com palavras como:\\n• **manutenção**, **impressora**, **computador**\\n• **FlexSmart**, **erro flex**\\n• **cadastro**, **admissão**\\n\\n0 — Voltar ao menu'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "subTest",
+          "line": 539,
+          "code": "yield"
+        },
+        {
+          "file": "tests/test_ticket_consult.py",
+          "function": "test_revocation_and_identity_failures",
+          "line": 116,
+          "code": "self.assertIn(consult.DENIED, get_text(await self.send('1')))"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_consult.ConsultTests.test_revocation_and_identity_failures (code='identity_mismatch')",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "'Não consegui confirmar seu acesso aos chamados. Entre em contato com o suporte de TI.' not found in '❌ **Joao**, não consegui identificar sua solicitação.\\n\\nPor favor, tente descrever com palavras como:\\n• **manutenção**, **impressora**, **computador**\\n• **FlexSmart**, **erro flex**\\n• **cadastro**, **admissão**\\n\\n0 — Voltar ao menu'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "subTest",
+          "line": 539,
+          "code": "yield"
+        },
+        {
+          "file": "tests/test_ticket_consult.py",
+          "function": "test_revocation_and_identity_failures",
+          "line": 116,
+          "code": "self.assertIn(consult.DENIED, get_text(await self.send('1')))"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_consult.ConsultTests.test_select_number_and_button_only_page_item",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "'🎫 Chamado #12' not found in '📝 Vamos abrir seu chamado! Descreva o que você precisa.\\n\\nExemplos:\\n• Problema na impressora\\n• Problema no FlexSmart\\n• Cadastro de novo colaborador\\n\\n0 — Voltar ao menu'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_ticket_consult.py",
+          "function": "test_select_number_and_button_only_page_item",
+          "line": 59,
+          "code": "self.assertIn('🎫 Chamado #12', get_text(await self.send('1')))"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_consult.ConsultTests.test_stale_button_after_refresh_or_next_page",
+      "status": "error",
+      "exception": "KeyError",
+      "message": "'version'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_ticket_consult.py",
+          "function": "test_stale_button_after_refresh_or_next_page",
+          "line": 78,
+          "code": "text = get_text(await self.send(payload={'query': '1', 'version': state['version']}))"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_consult.ConsultTests.test_user_isolation",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "'expirou' not found in '📝 Vamos abrir seu chamado! Descreva o que você precisa.\\n\\nExemplos:\\n• Problema na impressora\\n• Problema no FlexSmart\\n• Cadastro de novo colaborador\\n\\n0 — Voltar ao menu'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_ticket_consult.py",
+          "function": "test_user_isolation",
+          "line": 107,
+          "code": "self.assertIn('expirou', get_text(await self.send('1')))"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_detail.DetailFlowTests.test_attachment_empty_and_oversize_rejected",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "'1 a 2000 caracteres' not found in '❌ **Joao**, não consegui identificar sua solicitação.\\n\\nPor favor, tente descrever com palavras como:\\n• **manutenção**, **impressora**, **computador**\\n• **FlexSmart**, **erro flex**\\n• **cadastro**, **admissão**\\n\\n0 — Voltar ao menu'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_ticket_detail.py",
+          "function": "test_attachment_empty_and_oversize_rejected",
+          "line": 142,
+          "code": "self.assertIn('1 a 2000 caracteres', get_text(await self.send(text)))"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_detail.DetailFlowTests.test_capture_common_words_and_numbers_are_literal_drafts_preserve_case",
+      "status": "error",
+      "exception": "TypeError",
+      "message": "'NoneType' object is not subscriptable",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_ticket_detail.py",
+          "function": "test_capture_common_words_and_numbers_are_literal_drafts_preserve_case",
+          "line": 104,
+          "code": "self.assertEqual((await self.operation())['body'], body)"
+        },
+        {
+          "file": "tests/test_ticket_detail.py",
+          "function": "operation",
+          "line": 76,
+          "code": "return self.store.get_operation(state['draft'], self.binding, 12)"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_detail.DetailFlowTests.test_description_and_message_long_content_not_silently_truncated",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "'(1/2)' not found in '📝 Vamos abrir seu chamado! Descreva o que você precisa.\\n\\nExemplos:\\n• Problema na impressora\\n• Problema no FlexSmart\\n• Cadastro de novo colaborador\\n\\n0 — Voltar ao menu'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_ticket_detail.py",
+          "function": "test_description_and_message_long_content_not_silently_truncated",
+          "line": 94,
+          "code": "self.assertIn('(1/2)', get_text(await self.enter()))"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_detail.DetailFlowTests.test_detail_and_history_navigation_revalidates_each_operation",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "'🎫 Chamado #12 — Impressora' not found in '📝 Vamos abrir seu chamado! Descreva o que você precisa.\\n\\nExemplos:\\n• Problema na impressora\\n• Problema no FlexSmart\\n• Cadastro de novo colaborador\\n\\n0 — Voltar ao menu'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_ticket_detail.py",
+          "function": "test_detail_and_history_navigation_revalidates_each_operation",
+          "line": 80,
+          "code": "self.assertIn('🎫 Chamado #12 — Impressora', text)"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_detail.DetailFlowTests.test_double_click_and_replay_do_not_send_twice",
+      "status": "error",
+      "exception": "TypeError",
+      "message": "'NoneType' object is not subscriptable",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_ticket_detail.py",
+          "function": "test_double_click_and_replay_do_not_send_twice",
+          "line": 190,
+          "code": "payload = await self.button('send')"
+        },
+        {
+          "file": "tests/test_ticket_detail.py",
+          "function": "button",
+          "line": 60,
+          "code": "payload = {'detail': action, 'version': state['version']}"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_detail.DetailFlowTests.test_draft_and_button_copied_to_other_user_or_conversation_denied",
+      "status": "error",
+      "exception": "TypeError",
+      "message": "'NoneType' object is not subscriptable",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_ticket_detail.py",
+          "function": "test_draft_and_button_copied_to_other_user_or_conversation_denied",
+          "line": 160,
+          "code": "payload = await self.button('send')"
+        },
+        {
+          "file": "tests/test_ticket_detail.py",
+          "function": "button",
+          "line": 60,
+          "code": "payload = {'detail': action, 'version': state['version']}"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_detail.DetailFlowTests.test_draft_content_not_logged",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "'CONFIDENCIAL' unexpectedly found in '[call.info(\"Processando mensagem: \\'CONTEÚDO CONFIDENCIAL DO RASCUNHO\\'\"),\\n call.info(\\'Usuário: João Silva\\'),\\n call.info(\"Tentando identificar formulário para: \\'conteúdo confidencial do rascunho\\'\"),\\n call.info(\\'Nenhum formulário identificado\\')]'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_ticket_detail.py",
+          "function": "test_draft_content_not_logged",
+          "line": 254,
+          "code": "self.assertNotIn('CONFIDENCIAL', str(logger.mock_calls))"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_detail.DetailFlowTests.test_edit_cancel_and_confirm_payload_bound_to_draft",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "'Confira sua mensagem' not found in '❌ **Joao**, não consegui identificar sua solicitação.\\n\\nPor favor, tente descrever com palavras como:\\n• **manutenção**, **impressora**, **computador**\\n• **FlexSmart**, **erro flex**\\n• **cadastro**, **admissão**\\n\\n0 — Voltar ao menu'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_ticket_detail.py",
+          "function": "test_edit_cancel_and_confirm_payload_bound_to_draft",
+          "line": 111,
+          "code": "self.assertIn('Confira sua mensagem', preview)"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_detail.DetailFlowTests.test_explicit_cancel_draft",
+      "status": "error",
+      "exception": "TypeError",
+      "message": "'NoneType' object is not subscriptable",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_ticket_detail.py",
+          "function": "test_explicit_cancel_draft",
+          "line": 130,
+          "code": "op = (await self.state.get(self.ctx))['draft']"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_detail.DetailFlowTests.test_foreign_id_old_button_and_draft_payload_mismatch",
+      "status": "error",
+      "exception": "TypeError",
+      "message": "'NoneType' object is not subscriptable",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_ticket_detail.py",
+          "function": "test_foreign_id_old_button_and_draft_payload_mismatch",
+          "line": 151,
+          "code": "valid = await self.button('send')"
+        },
+        {
+          "file": "tests/test_ticket_detail.py",
+          "function": "button",
+          "line": 60,
+          "code": "payload = {'detail': action, 'version': state['version']}"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_detail.DetailFlowTests.test_global_error_handler_redacts_sensitive_text_and_exception",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "Expected mock to not have been awaited. Awaited 1 times.",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_ticket_detail.py",
+          "function": "test_global_error_handler_redacts_sensitive_text_and_exception",
+          "line": 297,
+          "code": "legacy_error_sender.assert_not_awaited()"
+        },
+        {
+          "file": "mock.py",
+          "function": "assert_not_awaited",
+          "line": 2400,
+          "code": "raise AssertionError(msg)"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_detail.DetailFlowTests.test_history_empty_and_failure_not_conflated",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "'ainda não tem mensagens públicas' not found in '❌ **Joao**, não consegui identificar sua solicitação.\\n\\nPor favor, tente descrever com palavras como:\\n• **manutenção**, **impressora**, **computador**\\n• **FlexSmart**, **erro flex**\\n• **cadastro**, **admissão**\\n\\n0 — Voltar ao menu'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_ticket_detail.py",
+          "function": "test_history_empty_and_failure_not_conflated",
+          "line": 225,
+          "code": "self.assertIn('ainda não tem mensagens públicas', get_text(await self.send('1')))"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_detail.DetailFlowTests.test_pre_post_failure_preserves_draft_and_expired_draft_cannot_send",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "'rascunho foi preservado' not found in '❌ **Joao**, não consegui identificar sua solicitação.\\n\\nPor favor, tente descrever com palavras como:\\n• **manutenção**, **impressora**, **computador**\\n• **FlexSmart**, **erro flex**\\n• **cadastro**, **admissão**\\n\\n0 — Voltar ao menu'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_ticket_detail.py",
+          "function": "test_pre_post_failure_preserves_draft_and_expired_draft_cannot_send",
+          "line": 214,
+          "code": "self.assertIn('rascunho foi preservado', text)"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_detail.DetailFlowTests.test_read_failure_preserves_confirm_screen_and_can_retry",
+      "status": "error",
+      "exception": "TypeError",
+      "message": "'NoneType' object is not subscriptable",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_ticket_detail.py",
+          "function": "test_read_failure_preserves_confirm_screen_and_can_retry",
+          "line": 258,
+          "code": "operation = (await self.state.get(self.ctx))['draft']"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_detail.DetailFlowTests.test_reserved_operation_cannot_be_cancelled_or_edited_as_if_unsent",
+      "status": "error",
+      "exception": "TypeError",
+      "message": "'NoneType' object is not subscriptable",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_ticket_detail.py",
+          "function": "test_reserved_operation_cannot_be_cancelled_or_edited_as_if_unsent",
+          "line": 303,
+          "code": "operation = (await self.state.get(self.ctx))['draft']"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_detail.DetailFlowTests.test_restart_old_draft_button_does_not_send_or_expose_content",
+      "status": "error",
+      "exception": "TypeError",
+      "message": "'NoneType' object is not subscriptable",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_ticket_detail.py",
+          "function": "test_restart_old_draft_button_does_not_send_or_expose_content",
+          "line": 272,
+          "code": "payload = await self.button('send')"
+        },
+        {
+          "file": "tests/test_ticket_detail.py",
+          "function": "button",
+          "line": 60,
+          "code": "payload = {'detail': action, 'version': state['version']}"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_detail.DetailFlowTests.test_return_to_list_requeries_and_old_list_button_cannot_select",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "0 != 2",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_ticket_detail.py",
+          "function": "test_return_to_list_requeries_and_old_list_button_cannot_select",
+          "line": 236,
+          "code": "self.assertEqual(self.query.list.call_count, 2)"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_detail.DetailFlowTests.test_revocation_replacement_inactive_user_and_ownership_loss_before_send",
+      "status": "failure",
+      "exception": "AssertionError",
+      "message": "'Não consegui confirmar seu acesso' not found in '❌ **Joao**, não consegui identificar sua solicitação.\\n\\nPor favor, tente descrever com palavras como:\\n• **manutenção**, **impressora**, **computador**\\n• **FlexSmart**, **erro flex**\\n• **cadastro**, **admissão**\\n\\n0 — Voltar ao menu'",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_ticket_detail.py",
+          "function": "test_revocation_replacement_inactive_user_and_ownership_loss_before_send",
+          "line": 179,
+          "code": "self.assertIn('Não consegui confirmar seu acesso', text)"
+        }
+      ]
+    },
+    {
+      "id": "test_ticket_detail.DetailFlowTests.test_timeout_after_fence_uncertain_no_resend",
+      "status": "error",
+      "exception": "TypeError",
+      "message": "'NoneType' object is not subscriptable",
+      "frames": [
+        {
+          "file": "case.py",
+          "function": "testPartExecutor",
+          "line": 58,
+          "code": "yield"
+        },
+        {
+          "file": "case.py",
+          "function": "run",
+          "line": 634,
+          "code": "self._callTestMethod(testMethod)"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callTestMethod",
+          "line": 90,
+          "code": "if self._callMaybeAsync(method) is not None:"
+        },
+        {
+          "file": "async_case.py",
+          "function": "_callMaybeAsync",
+          "line": 112,
+          "code": "return self._asyncioRunner.run("
+        },
+        {
+          "file": "runners.py",
+          "function": "run",
+          "line": 118,
+          "code": "return self._loop.run_until_complete(task)"
+        },
+        {
+          "file": "base_events.py",
+          "function": "run_until_complete",
+          "line": 687,
+          "code": "return future.result()"
+        },
+        {
+          "file": "tests/test_ticket_detail.py",
+          "function": "test_timeout_after_fence_uncertain_no_resend",
+          "line": 197,
+          "code": "payload = await self.button('send')"
+        },
+        {
+          "file": "tests/test_ticket_detail.py",
+          "function": "button",
+          "line": 60,
+          "code": "payload = {'detail': action, 'version': state['version']}"
+        }
+      ]
+    }
+  ]
+}

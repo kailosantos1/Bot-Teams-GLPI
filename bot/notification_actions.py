@@ -11,7 +11,7 @@ from notifications.policy import Policy
 def actions(text, values):
     buttons = [CardAction(type='messageBack', title=label, text=label, display_text=label, value=value)
                for label, value in values]
-    return Activity(type='message', text=text, attachments=[_card_attachment(HeroCard(text=text, buttons=buttons))])
+    return Activity(type='message', attachments=[_card_attachment(HeroCard(text=text, buttons=buttons))])
 
 
 async def handle(context, user_name):

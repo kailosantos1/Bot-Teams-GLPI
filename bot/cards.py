@@ -7,6 +7,7 @@ e oferece fallback transparente quando o SDK não estiver instalado.
 from typing import Any, Dict, List, Optional
 
 try:
+    from botbuilder.core import CardFactory
     from botbuilder.schema import (
         Activity,
         ActivityTypes,
@@ -16,6 +17,7 @@ try:
         ActionTypes,
     )
 except ImportError:
+    CardFactory = None
     class ActionTypes:
         im_back = "imBack"
         message_back = "messageBack"
@@ -133,10 +135,9 @@ def _btn(title: str, text: str, action: str, confirmation: str = None) -> CardAc
 
 
 def _card_attachment(card: HeroCard) -> Attachment:
-    return Attachment(
-        content_type="application/vnd.microsoft.card.hero",
-        content=card,
-    )
+    if CardFactory is not None:
+        return CardFactory.hero_card(card)
+    return Attachment(content_type="application/vnd.microsoft.card.hero", content=card)
 
 
 def is_personal_conversation(activity: Any) -> bool:
@@ -233,7 +234,6 @@ def build_menu_activity(first_name: str) -> Activity:
     )
     return Activity(
         type=ActivityTypes.message,
-        text=text,
         attachments=[_card_attachment(card)],
     )
 
@@ -247,7 +247,6 @@ def build_open_ticket_activity(first_name: str = None) -> Activity:
     )
     return Activity(
         type=ActivityTypes.message,
-        text=OPEN_TICKET_TEXT,
         attachments=[_card_attachment(card)],
     )
 
@@ -261,7 +260,6 @@ def build_consult_activity() -> Activity:
     )
     return Activity(
         type=ActivityTypes.message,
-        text=CONSULT_TEXT,
         attachments=[_card_attachment(card)],
     )
 
@@ -277,7 +275,6 @@ def build_interrupt_activity(first_name: str, form_name: str, confirmation: str 
     )
     return Activity(
         type=ActivityTypes.message,
-        text=text,
         attachments=[_card_attachment(card)],
     )
 
@@ -292,7 +289,6 @@ def build_unidentified_open_activity(first_name: str) -> Activity:
     )
     return Activity(
         type=ActivityTypes.message,
-        text=text,
         attachments=[_card_attachment(card)],
     )
 
@@ -307,7 +303,6 @@ def build_invalid_menu_activity() -> Activity:
     )
     return Activity(
         type=ActivityTypes.message,
-        text=INVALID_MENU_TEXT,
         attachments=[_card_attachment(card)],
     )
 
@@ -321,7 +316,6 @@ def build_invalid_consult_activity() -> Activity:
     )
     return Activity(
         type=ActivityTypes.message,
-        text=INVALID_CONSULT_TEXT,
         attachments=[_card_attachment(card)],
     )
 
@@ -337,7 +331,6 @@ def build_interrupt_invalid_activity(first_name: str, confirmation: str = None) 
     )
     return Activity(
         type=ActivityTypes.message,
-        text=text,
         attachments=[_card_attachment(card)],
     )
 

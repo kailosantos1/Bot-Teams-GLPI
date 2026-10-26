@@ -10,15 +10,26 @@ from bot.dialogs import DynamicFormProcessor
 from bot.state import conversation_state, user_state
 from bot.utils import UserNameFormatter
 from bot.auth import UserAuthorization
+from identity.ingress import IdentityIngress, _build_adapter
+from identity.service import IdentityService
+from identity.store import LinkStore
+from identity.glpi import GLPIUserReader
 
 app = FastAPI(title="Byte Bot de Chamados API")
 
-adapter_settings = BotFrameworkAdapterSettings(
-    app_id=settings.MICROSOFT_APP_ID,
-    app_password=settings.MICROSOFT_APP_PASSWORD,
-    channel_auth_tenant=settings.MICROSOFT_APP_TENANT_ID
-)
-adapter = BotFrameworkAdapter(adapter_settings)
+adapter, credential_provider, identity_key = _build_adapter(settings)
+identity_service = IdentityService(LinkStore(settings.IDENTITY_DB_PATH),
+    GLPIUserReader(settings.GLPI_URL, settings.GLPI_APP_TOKEN, settings.GLPI_USER_TOKEN),
+    settings.IDENTITY_ALLOWED_TENANT_ID)
+identity_ingress = IdentityIngress(settings, identity_service,
+    adapter_bundle=(adapter, credential_provider, identity_key))
+
+async def authenticated_message(context, resolve_identity):
+    context.resolve_ticket_identity = resolve_identity
+    try:
+        await logic_process_message(context)
+    finally:
+        del context.resolve_ticket_identity
 
 
 async def send_error_message(context: TurnContext, message: str):
@@ -26,7 +37,7 @@ async def send_error_message(context: TurnContext, message: str):
     first_name = UserNameFormatter.extract_first_name(
         context.activity.from_property.name if context.activity else None
     )
-    
+
     try:
         await context.send_activity(
             f"⚠️ **{first_name}, ocorreu um erro!**\n\n"
@@ -43,6 +54,19 @@ async def on_error(context: TurnContext, error: Exception):
     Handler global de erro do adapter.
     Captura QUALQUER erro e sempre responde ao usuário.
     """
+    if getattr(context, 'sensitive_ticket_flow', False):
+        # Never log draft text, API content or raw exceptions from this path.
+        logger.error("Falha no fluxo de consulta/resposta: %s", type(error).__name__)
+        await context.send_activity(
+            "Não consegui concluir essa operação agora. Use as opções atuais para tentar novamente."
+        )
+        try:
+            await conversation_state.save_changes(context)
+            await user_state.save_changes(context)
+        except Exception:
+            logger.error("Erro ao salvar estado da consulta/resposta")
+        return
+
     # Log detalhado
     logger.error("="*80)
     logger.error("❌ ERRO NO BOT")
@@ -50,17 +74,16 @@ async def on_error(context: TurnContext, error: Exception):
     logger.error(f"Tipo: {type(error).__name__}")
     logger.error(f"Mensagem: {str(error)}")
     logger.error(f"Traceback: {traceback.format_exc()}")
-    
+
     try:
         if context and context.activity:
             logger.error(f"Usuário: {context.activity.from_property.name}")
-            logger.error(f"Texto: {context.activity.text}")
     except Exception as log_error:
         logger.error(f"Erro ao logar contexto: {log_error}")
-    
+
     # Mensagens de erro específicas
     error_message = "Ocorreu um erro inesperado ao processar sua mensagem."
-    
+
     if isinstance(error, TimeoutError):
         error_message = "O servidor demorou muito para responder. Tente novamente em instantes."
     elif "connection" in str(error).lower():
@@ -69,9 +92,9 @@ async def on_error(context: TurnContext, error: Exception):
         error_message = "O GLPI demorou muito para responder. Tente novamente."
     elif "authentication" in str(error).lower() or "auth" in str(error).lower():
         error_message = "Erro de autenticação com o GLPI. Contate o suporte de TI."
-    
+
     await send_error_message(context, error_message)
-    
+
     # Tenta salvar o estado mesmo com erro
     try:
         await conversation_state.save_changes(context)
@@ -87,27 +110,24 @@ async def logic_process_message(turn_context: TurnContext):
     try:
         if turn_context.activity.type != ActivityTypes.message:
             return
-        
+
         # ============================================================
         # VALIDAÇÃO DE AUTORIZAÇÃO DO USUÁRIO
         # ============================================================
         logger.info("="*60)
         logger.info("🔐 INICIANDO VALIDAÇÃO DE AUTORIZAÇÃO")
         logger.info("="*60)
-        
-        is_authorized, user_email, auth_message = UserAuthorization.validate_user(
-            turn_context.activity
-        )
-        
-        if not is_authorized:
-            logger.warning(f"⛔ ACESSO NEGADO para: {user_email or 'email desconhecido'}")
-            await turn_context.send_activity(auth_message)
-            await conversation_state.save_changes(turn_context)
-            await user_state.save_changes(turn_context)
-            return
-        
-        logger.info(f"✅ Usuário autorizado: {user_email}")
-        logger.info("="*60)
+
+        user_email = None
+        if await DynamicFormProcessor.needs_legacy_authorization(turn_context):
+            is_authorized, user_email, auth_message = UserAuthorization.validate_user(
+                turn_context.activity
+            )
+            if not is_authorized:
+                await turn_context.send_activity(auth_message)
+                await conversation_state.save_changes(turn_context)
+                await user_state.save_changes(turn_context)
+                return
 
         user_text = (turn_context.activity.text or "").strip()
         user_name = turn_context.activity.from_property.name or "Usuário Teams"
@@ -128,7 +148,7 @@ async def logic_process_message(turn_context: TurnContext):
             await conversation_state.save_changes(turn_context)
             await user_state.save_changes(turn_context)
             return
-        
+
         turn_context.user_email = user_email
 
         response_text = await DynamicFormProcessor.process_user_message(
@@ -143,9 +163,12 @@ async def logic_process_message(turn_context: TurnContext):
 
         await conversation_state.save_changes(turn_context)
         await user_state.save_changes(turn_context)
-        
+
     except Exception as e:
-        logger.error(f"Erro detalhado: {traceback.format_exc()}")
+        if getattr(turn_context, 'sensitive_ticket_flow', False):
+            logger.error("Falha no fluxo de consulta/resposta")
+        else:
+            logger.error(f"Erro detalhado: {traceback.format_exc()}")
         raise
 
 
@@ -158,17 +181,17 @@ async def messages(req: Request):
     try:
         if "application/json" not in req.headers.get("content-type", ""):
             return Response(status_code=415)
-        
+
         auth_header = req.headers.get("Authorization", "")
         body = await req.json()
         activity = Activity().deserialize(body)
-        
-        response = await adapter.process_activity(activity, auth_header, logic_process_message)
-        
+
+        response = await identity_ingress.dispatch(activity, auth_header, authenticated_message)
+
         if response:
             return Response(status_code=response.status, content=response.body)
         return Response(status_code=200)
-        
+
     except Exception as e:
         logger.exception(f"Erro ao processar atividade: {e}")
         return Response(status_code=200)
@@ -191,7 +214,7 @@ async def status_check():
     """Endpoint para verificar status detalhado."""
     from datetime import datetime
     from config import FORMS_CONFIG
-    
+
     return {
         "status": "running",
         "timestamp": datetime.now().isoformat(),
@@ -207,9 +230,9 @@ async def status_check():
 
 if __name__ == "__main__":
     import uvicorn
-    
+
     uvicorn.run(
-        app,  
+        app,
         host="0.0.0.0",
         port=3000,
         log_config=None,

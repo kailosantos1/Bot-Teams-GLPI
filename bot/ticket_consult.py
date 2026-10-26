@@ -34,6 +34,10 @@ def card(text, version, actions):
 
 
 async def reset(context):
+    # BotStatePropertyAccessor.delete raises KeyError for an absent property.
+    # Public get initializes it first, making cleanup safe on fresh/repeated turns.
+    # Storage errors still propagate normally.
+    await query_state_accessor.get(context, lambda: {})
     await query_state_accessor.delete(context)
 
 

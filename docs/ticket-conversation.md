@@ -143,10 +143,10 @@ Detalhes: `GET /Ticket/{id}`, sem Formcreator. Histórico: somente `GET /Ticket/
 Envio: único `POST /ITILFollowup` com `input` limitado a itemtype=Ticket, items_id decidido pelo backend, is_private=0, content e `_no_reopen=true`. Não há POST Ticket/FormAnswer, PUT de status/requerente/atribuição ou impersonação. O autor nativo é a conta autenticada pelo GLPI_USER_TOKEN; não se envia users_id. O servidor acrescenta:
 
 ```text
-Origem: Microsoft Teams — João Silva (requerente com identidade validada).
+Origem: Microsoft Teams — João Silva
 ```
 
-Esse nome vem de GET exato do usuário GLPI resolvido, não do nome de exibição Teams; sem nome disponível, usa rótulo neutro de requerente validado. A operação persistida vincula identidade, conversa e ticket ao recibo do acompanhamento. A autoria nativa da integração não é apresentada como autoria nativa do requerente. Efeitos normais do GLPI (date_mod, auditoria e notificações nativas conforme configuração) podem ocorrer; não foi criado mecanismo de notificação Teams.
+Esse nome vem de GET exato do usuário GLPI resolvido, não do nome de exibição Teams; sem nome disponível, usa rótulo neutro de requerente validado. A operação persistida vincula identidade, conversa e ticket ao recibo do acompanhamento. Somente com esse comprovante o histórico atribui o remetente e oculta um cabeçalho inicial reconhecido; o formato legado também é reconhecido sem alterar acompanhamentos já gravados. Prefixos sem comprovante ou divergentes permanecem como conteúdo. A autoria nativa da integração não é apresentada como autoria nativa do requerente. Efeitos normais do GLPI (date_mod, auditoria e notificações nativas conforme configuração) podem ocorrer; não foi criado mecanismo de notificação Teams.
 
 ## Conteúdo e limites
 

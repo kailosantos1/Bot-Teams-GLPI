@@ -122,6 +122,8 @@ VALID_ACTIONS = {
     "consult_tickets",
     "continue_form",
     "cancel_form_to_menu",
+    "cancel_form_to_exit",
+    "exit_navigation",
 }
 
 
@@ -203,8 +205,9 @@ def build_menu_activity(first_name: str) -> Activity:
     card = HeroCard(
         text=text,
         buttons=[
-            _btn("1 — Abrir um chamado", "1", "open_ticket"),
-            _btn("2 — Consultar meus chamados", "2", "consult_tickets"),
+            _btn("1 — Abrir chamado", "1", "open_ticket"),
+            _btn("2 — Consultar chamados", "2", "consult_tickets"),
+            _btn("3 — Sair", "3", "exit_navigation"),
         ],
     )
     return Activity(
@@ -239,13 +242,15 @@ def build_consult_activity() -> Activity:
     )
 
 
-def build_interrupt_activity(first_name: str, form_name: str, confirmation: str = None) -> Activity:
+def build_interrupt_activity(first_name: str, form_name: str, confirmation: str = None,
+                             *, exit_after: bool = False) -> Activity:
     text = INTERRUPT_TEXT.format(first_name=first_name, form_name=form_name)
     card = HeroCard(
         text=text,
         buttons=[
             _btn("1 — Continuar preenchimento", "1", "continue_form", confirmation),
-            _btn("2 — Cancelar preenchimento e ir ao menu", "2", "cancel_form_to_menu", confirmation),
+            _btn("2 — " + ("Descartar e sair" if exit_after else "Descartar e ir ao menu"), "2",
+                 "cancel_form_to_exit" if exit_after else "cancel_form_to_menu", confirmation),
         ],
     )
     return Activity(
@@ -272,8 +277,9 @@ def build_invalid_menu_activity() -> Activity:
     card = HeroCard(
         text=INVALID_MENU_TEXT,
         buttons=[
-            _btn("1 — Abrir um chamado", "1", "open_ticket"),
-            _btn("2 — Consultar meus chamados", "2", "consult_tickets"),
+            _btn("1 — Abrir chamado", "1", "open_ticket"),
+            _btn("2 — Consultar chamados", "2", "consult_tickets"),
+            _btn("3 — Sair", "3", "exit_navigation"),
         ],
     )
     return Activity(
@@ -308,4 +314,8 @@ def build_interrupt_invalid_activity(first_name: str, confirmation: str = None) 
         type=ActivityTypes.message,
         attachments=[_card_attachment(card)],
     )
+
+
+def build_exit_activity() -> Activity:
+    return Activity(type=ActivityTypes.message, text="Até logo! Quando precisar, é só enviar uma mensagem.")
 

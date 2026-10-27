@@ -9,6 +9,7 @@ from bot.state import user_profile_accessor, nav_state_accessor
 from bot.utils import UserNameFormatter
 from bot.auth import UserAuthorization
 from bot.attachments import TeamsAttachmentHandler
+from bot.activity_attachments import has_real_attachments
 from bot.cards import (
     VALID_ACTIONS,
     parse_button_action,
@@ -512,7 +513,7 @@ class DynamicFormProcessor:
                 if is_personal and current_screen == "confirm_menu_interrupt":
                     confirmation = nav_state.get("confirmation")
                     if button_action and (
-                        button_action not in {"continue_form", "cancel_form_to_menu"}
+                        button_action not in {"continue_form", "cancel_form_to_menu", "cancel_form_to_exit"}
                         or getattr(activity, "value", {}).get("confirmation") != confirmation
                     ):
                         return build_interrupt_invalid_activity(first_name, confirmation)
@@ -531,7 +532,7 @@ class DynamicFormProcessor:
                         await nav_acc.delete(turn_context)
                         return await cls.reprompt_current_stage(turn_context, session, user_name)
 
-                    if button_action == "cancel_form_to_menu" or text_lower in [
+                    if button_action in {"cancel_form_to_menu", "cancel_form_to_exit"} or text_lower in [
                         "cancelar",
                         "cancelar preenchimento",
                         "cancelar e ir ao menu",
@@ -541,17 +542,21 @@ class DynamicFormProcessor:
                         "abortar",
                     ]:
                         await profile_acc.delete(turn_context)
-                        await nav_acc.set(turn_context, {"screen": "menu"})
+                        exit_after = button_action == "cancel_form_to_exit" or nav_state.get("destination") == "exit"
+                        await nav_acc.set(turn_context, {"screen": "exited" if exit_after else "menu"})
                         await turn_context.send_activity(
                             f"❌ **{first_name}**, a abertura de chamado foi cancelada."
                         )
+                        if exit_after:
+                            from bot.cards import build_exit_activity
+                            return build_exit_activity()
                         return build_menu_activity(first_name)
 
                     # Outras respostas não avançam a pergunta durante a confirmação.
                     return build_interrupt_invalid_activity(first_name, confirmation)
 
                 # 1.2 Comando explícito de cancelamento
-                if text_lower in ["cancelar", "sair", "parar", "abortar"]:
+                if text_lower in ["cancelar", "parar", "abortar"]:
                     await profile_acc.delete(turn_context)
                     await nav_acc.set(turn_context, {"screen": "menu"})
                     await turn_context.send_activity(
@@ -560,11 +565,13 @@ class DynamicFormProcessor:
                     return build_menu_activity(first_name)
 
                 # 1.3 Usuário digitou 'menu' ou clicou em botão de navegação antigo
-                if is_personal and (text_lower == "menu" or button_action):
+                if is_personal and (text_lower in {"menu", "sair"} or button_action):
                     confirmation = uuid4().hex
-                    await nav_acc.set(turn_context, {"screen": "confirm_menu_interrupt", "confirmation": confirmation})
+                    exit_after = text_lower == "sair" or button_action == "exit_navigation"
+                    await nav_acc.set(turn_context, {"screen": "confirm_menu_interrupt", "confirmation": confirmation,
+                                                     "destination": "exit" if exit_after else "menu"})
                     form_name = session.get("form_name", "Formulário")
-                    return build_interrupt_activity(first_name, form_name, confirmation)
+                    return build_interrupt_activity(first_name, form_name, confirmation, exit_after=exit_after)
 
                 if text_lower in {"ajuda", "help", "?", "comandos", "socorro", "status", "sobre"}:
                     return await cls.handle_special_commands(
@@ -573,6 +580,9 @@ class DynamicFormProcessor:
 
                 # 1.4 Respostas normais do formulário em andamento
                 stage = session.get("stage", "questions")
+                if stage == "questions" and has_real_attachments(activity):
+                    return ("📎 Arquivos só podem ser enviados na etapa de anexos. "
+                            "Sua resposta e o arquivo não foram salvos. Envie novamente apenas o texto.")
                 if stage == "ask_attachment":
                     text_lower = {"1": "sim", "2": "não"}.get(text_lower, text_lower)
                 elif stage == "collecting_attachments" and text_lower == "1":
@@ -829,6 +839,11 @@ class DynamicFormProcessor:
                 await nav_acc.set(turn_context, {"screen": "consult"})
                 return build_consult_activity()
 
+            if button_action == "exit_navigation":
+                from bot.cards import build_exit_activity
+                await nav_acc.set(turn_context, {"screen": "exited"})
+                return build_exit_activity()
+
             if button_action == "menu" or text_lower == "menu":
                 await nav_acc.set(turn_context, {"screen": "menu"})
                 return build_menu_activity(first_name)
@@ -950,6 +965,11 @@ class DynamicFormProcessor:
             ]:
                 await nav_acc.set(turn_context, {"screen": "consult"})
                 return build_consult_activity()
+
+            if text_clean == "3" or text_lower in {"3 — sair", "3 - sair", "sair"}:
+                from bot.cards import build_exit_activity
+                await nav_acc.set(turn_context, {"screen": "exited"})
+                return build_exit_activity()
 
             special_response = await cls.handle_special_commands(
                 turn_context, text_lower, user_name, is_personal=True

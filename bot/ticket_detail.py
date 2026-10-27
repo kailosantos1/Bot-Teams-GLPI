@@ -8,6 +8,7 @@ from services.ticket_conversation import TicketConversation, AccessDenied
 from services.reply_sender import ReplySender
 from services.ticket_content import passive, pages, PAGE_SIZE
 from bot.ticket_presentation import display_title, glpi_date
+from bot.activity_attachments import has_real_attachments
 from services.ticket_query import STATUS_LABELS
 
 service = TicketConversation(settings.GLPI_URL, settings.GLPI_APP_TOKEN, settings.GLPI_USER_TOKEN)
@@ -70,21 +71,22 @@ async def details(context, result, binding, state, tid=None, offset=0):
 async def history(context, result, state, offset=0):
     messages = await asyncio.to_thread(service.history, result.glpi_user_id, state['ticket'])
     chunks = []
-    for message in messages:
+    for message_index, message in enumerate(messages):
         parts = pages(message['content'])
         for i, part in enumerate(parts, 1):
-            part_label = f'Trecho {i}/{len(parts)}\n' if len(parts) > 1 else ''
-            chunks.append(f"{message['author']}\n{glpi_date(message['date'])} — horário do GLPI\n\n"
-                          f"{part_label}{part}")
+            part_label = f'Parte {i} de {len(parts)}\n' if len(parts) > 1 else ''
+            chunks.append(dict(message=message_index, part=i, parts=len(parts), text=
+                f"{message['author']}\n{glpi_date(message['date'])} — horário do GLPI\n\n{part_label}{part}"))
     offset = min(max(0, offset), max(0, len(chunks) - 1))
     text = (f"💬 Conversa · #{state['ticket']}\nMais recentes primeiro\n\n"
-            + ((f'Página {offset + 1}/{len(chunks)}\n\n' if len(chunks) > 1 else '') + chunks[offset] if chunks else 'Este chamado ainda não tem mensagens públicas.'))
-    actions = [('4', 'Voltar'), ('8', 'Atualizar'), ('3', 'Meus chamados'), ('0', 'Menu')]
-
+            + (chunks[offset]['text'] if chunks else 'Este chamado ainda não tem mensagens públicas.'))
+    actions = [('4', 'Voltar ao chamado'), ('8', 'Atualizar')]
     if offset:
-        actions.append(('7', 'Página anterior'))
+        same = chunks[offset - 1]['message'] == chunks[offset]['message']
+        actions.append(('7', 'Parte anterior' if same else 'Mensagens mais recentes'))
     if offset + 1 < len(chunks):
-        actions.append(('9', 'Mensagens anteriores'))
+        same = chunks[offset + 1]['message'] == chunks[offset]['message']
+        actions.append(('9', 'Continuar mensagem' if same else 'Mensagens mais antigas'))
     return await screen(context, dict(state, part=offset), text, actions, view='history', paragraphs=True)
 
 
@@ -131,9 +133,11 @@ async def handle(context, raw_text, result, binding, state, payload):
     if view in {'capture', 'confirm'}:
         if payload is None and op == '/tentar-novamente':
             op = 'retry_view'
-        if getattr(context.activity, 'attachments', None):
-            return await screen(context, state, 'Somente texto é aceito. Nenhum anexo foi enviado.\n'
-                                'Digite /cancelar-resposta para voltar ao chamado.', [('cancel', 'Cancelar resposta')])
+        if has_real_attachments(context.activity):
+            return await screen(context, state,
+                'Somente texto é aceito nesta resposta. A mensagem e o arquivo não foram enviados nem salvos.\n'
+                'Remova o arquivo e envie o texto novamente, ou use /cancelar-resposta.',
+                [('cancel', 'Cancelar resposta')])
         draft = None
         if state.get('draft'):
             draft = await asyncio.to_thread(reply_store.get_operation, state['draft'], binding, state['ticket'])

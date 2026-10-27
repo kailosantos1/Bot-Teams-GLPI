@@ -36,8 +36,10 @@ def card(text, version, actions, *, paragraphs=False, guidance=True):
         buttons.append(CardAction(type='messageBack', title=title, text=action,
                                  display_text=title, value={'query': action, 'version': version}))
     guidance = '\n\nToque em uma opção ou digite o número.' if guidance and any(action.isdigit() for action, _ in actions) else ''
-    attachments = [_card_attachment(HeroCard(text=text.rstrip() + guidance if offset == 0 else 'Navegação',
-                    buttons=buttons[offset:offset + 5]), paragraphs=paragraphs) for offset in range(0, len(buttons), 5)]
+    # A former local five-button split produced a second, contextless card.  Keep
+    # one coherent card; callers reduce redundant actions per screen.
+    attachments = [_card_attachment(HeroCard(text=text.rstrip() + guidance,
+                    buttons=buttons), paragraphs=paragraphs)] if buttons else []
     return Activity(type='message', text=text if not attachments else None, attachments=attachments)
 
 

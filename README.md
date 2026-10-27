@@ -1,4 +1,4 @@
-# Byte Bot de Chamados
+# Otto — Assistente GLPI
 
 Bot do Microsoft Teams para abrir chamados no GLPI via Formcreator, consultar chamados do próprio requerente, ler acompanhamentos públicos e enviar respostas textuais confirmadas. Notificações públicas do suporte são opcionais e vêm desabilitadas. Integração real deve ser homologada antes de disponibilizar os novos fluxos.
 
@@ -89,3 +89,17 @@ venv/bin/python -m tools.notifications resume --tenant TENANT_ID --object-id OBJ
 Pause remove a referência e descarta pendências ainda não enviadas. Resume exige nova consulta pessoal autenticada e cria nova geração/linha de base, sem recuperar fila antiga. Para revogar também consulta/resposta, use `tools.identity_links revoke`.
 
 Pare o processo com SIGINT/SIGTERM. Após interrupção abrupta, aguarde o lease/reservas; não os apague para forçar envio. Apenas parar/reiniciar conserva o backlog. Para retomar sem histórico, use pause/resume nos destinatários antes de habilitar novamente. Para desativar globalmente, pare o processo dedicado e deixe `NOTIFICATIONS_ENABLED=false`, sem remover credenciais compartilhadas pela abertura.
+
+## Execução em instância única (recomendado)
+
+Com `NOTIFICATIONS_ENABLED=true` e `NOTIFICATIONS_INTERVAL=10`, iniciar apenas:
+
+```sh
+venv/bin/python main.py
+```
+
+O bot e o worker de notificações rodam no mesmo processo (FastAPI + manager). Não é necessário executar `python -m tools.notifications run` separadamente no uso normal. O comando dedicado permanece disponível para diagnóstico/operções administrativas (`pause/resume/cleanup/once`).
+
+Para empacotar com PyInstaller/NSSM, use um único executável apontando para `main.py`. Não habilite reload/múltiplos workers do Uvicorn. Mantenha `.env`, `config/` e o SQLite (`IDENTITY_DB_PATH`, padrão `data/identity.sqlite3`) em caminhos persistentes (fora do diretório temporário de extração). Proteja o banco e backups por permissões. Use o lock interno para evitar workers duplicados caso o comando separado seja iniciado por engano.
+
+Build concreto, caminhos persistentes e limites de encerramento: [Windows/NSSM](docs/windows-nssm.md). O shutdown aguarda operações em andamento sem liberar a proteção antecipadamente.

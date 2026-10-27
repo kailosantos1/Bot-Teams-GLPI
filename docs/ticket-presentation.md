@@ -75,7 +75,7 @@ mesmo fluxo, antes da descrição, em vez de truncado ou enviado sem limite.
 
 Teams Bot:
 
-Chamado aberto pelo Teams — Otto Bot de Chamados
+Chamado aberto pelo Teams — Otto — Assistente GLPI
 
 [4 — Voltar]
 [8 — Atualizar]

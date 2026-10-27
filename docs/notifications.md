@@ -97,7 +97,7 @@ venv/bin/python -m tools.notifications once --simulate
 venv/bin/python -m tools.notifications run --simulate --interval 60
 ```
 
-Simulação **não é offline** e avança a observação/produz pendências reais. Não execute com configuração real apenas para teste. Antes de sair de uma simulação e habilitar envio, use pause/resume nos destinatários para descartar essas pendências se não desejar entregá-las. Nenhum desses comandos com GLPI real foi executado nesta implementação. Não iniciar worker em import, startup do FastAPI ou por worker do Uvicorn. Supervisor/systemd pode executar `run`; parar com SIGINT/SIGTERM e aguardar recuperação conservadora quando interromper envio.
+Simulação **não é offline** e avança a observação/produz pendências reais. Não execute com configuração real apenas para teste. Antes de sair de uma simulação e habilitar envio, use pause/resume nos destinatários para descartar essas pendências se não desejar entregá-las. Nenhum desses comandos com GLPI real foi executado nesta implementação. Importar módulos não inicia o worker. O startup do FastAPI inicia o manager quando habilitado e configurado; usar apenas um processo Uvicorn. O comando `run` é alternativa separada e disputa a mesma proteção por banco. O shutdown aguarda o ciclo corrente; interrupção forçada exige recuperação conservadora. Ver [Windows/NSSM](windows-nssm.md).
 
 Comandos exclusivamente locais (tenant/object ID abaixo fictícios):
 

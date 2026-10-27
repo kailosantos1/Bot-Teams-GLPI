@@ -11,6 +11,7 @@ from services.ticket_conversation import AccessDenied
 from services.ticket_content import html_text
 from services.ticket_query import QueryError
 from .capture import valid_reference
+from .lifecycle import blocking
 
 
 class MembershipUnavailable(QueryError):
@@ -161,17 +162,17 @@ class Worker:
                 continue
 
     async def cycle(self, *, simulate=False):
-        await asyncio.to_thread(self.store.prepare)
-        if not await asyncio.to_thread(self.store.lease, self.owner):
+        await blocking(self.store.prepare)
+        if not await blocking(self.store.lease, self.owner):
             return {'busy': True}
         self.calls, self.deadline = 0, time.monotonic() + self.MAX_SECONDS
         self.query.request_guard = self.guard
         sent = 0
         try:
-            await asyncio.to_thread(self.store.cleanup)
+            await blocking(self.store.cleanup)
             self.observing = True
             try:
-                await asyncio.to_thread(self.observe)
+                await blocking(self.observe)
             except BudgetExceeded:
                 pass
             self.observing = False
@@ -179,54 +180,55 @@ class Worker:
                 for _ in range(self.MAX_SENDS):
                     if time.monotonic() >= self.deadline:
                         break
-                    event = await asyncio.to_thread(self.store.reserve)
+                    event = await blocking(self.store.reserve)
                     if not event:
                         break
                     sent += await self.deliver(event)
             return {'busy': False, 'sent': sent, 'simulation': simulate}
         finally:
-            await asyncio.to_thread(self.store.release, self.owner)
+            await blocking(self.store.release, self.owner)
 
     async def deliver(self, event):
         submitting = False
         membership_in_progress = False
         ref = None
         async def finish(state, **kwargs):
-            await asyncio.to_thread(self.store.transition, event, state, **kwargs)
+            await blocking(self.store.transition, event, state, **kwargs)
         try:
-            await asyncio.to_thread(self.guard)
-            ref = await asyncio.to_thread(self.store.reference_for, event['tenant'], event['object_id'])
+            await blocking(self.guard)
+            ref = await blocking(self.store.reference_for, event['tenant'], event['object_id'])
             if (not ref or ref['generation'] != event['generation'] or ref['revision'] != event['revision']
-                    or not await asyncio.to_thread(self.valid, ref)):
+                    or not await blocking(self.valid, ref)):
                 await finish('discarded')
                 return 0
-            ticket, row = await asyncio.to_thread(self.query.notification, ref['uid'], event['ticket'], event['followup'])
-            excluded = await asyncio.to_thread(self.exclusions)
-            if not await asyncio.to_thread(self.eligible, row, ref['uid'], excluded):
+            ticket, row = await blocking(self.query.notification, ref['uid'], event['ticket'], event['followup'])
+            excluded = await blocking(self.exclusions)
+            if not await blocking(self.eligible, row, ref['uid'], excluded):
                 await finish('discarded')
                 return 0
             reference = json.loads(ref['reference'])
             async def before_send():
                 nonlocal submitting, membership_in_progress
-                await asyncio.to_thread(self.guard)
-                if not await asyncio.to_thread(self.store.has_lease, self.owner):
+                await blocking(self.guard)
+                if not await blocking(self.store.has_lease, self.owner):
                     raise Conflict('lease_lost')
-                if not await asyncio.to_thread(self.valid, ref):
+                if not await blocking(self.valid, ref):
                     raise AccessDenied()
                 # Recheck after connector/token preparation, immediately before send.
-                _, latest = await asyncio.to_thread(self.query.notification, ref['uid'], event['ticket'], event['followup'])
-                excluded_now = await asyncio.to_thread(self.exclusions)
+                _, latest = await blocking(self.query.notification, ref['uid'], event['ticket'], event['followup'])
+                excluded_now = await blocking(self.exclusions)
                 membership_in_progress = True
-                allowed = await asyncio.to_thread(self.eligible, latest, ref['uid'], excluded_now)
+                allowed = await blocking(self.eligible, latest, ref['uid'], excluded_now)
                 membership_in_progress = False
                 if not allowed:
                     raise AccessDenied()
-                if not await asyncio.to_thread(self.store.has_lease, self.owner):
+                if not await blocking(self.store.has_lease, self.owner):
                     raise Conflict('lease_lost')
                 # Fence before any possible send. Crash after here is uncertain.
                 await finish('submitting')
                 submitting = True
-            receipt = await asyncio.wait_for(self.transport.send(reference, notice(event, ticket['title']), before_send), timeout=15)
+            activity = await blocking(notice, event, ticket['title'])
+            receipt = await asyncio.wait_for(self.transport.send(reference, activity, before_send), timeout=15)
             await finish('sent' if receipt else 'uncertain', receipt=receipt)
             return int(bool(receipt))
         except AccessDenied:
@@ -248,7 +250,7 @@ class Worker:
             elif status in (400, 401, 403, 404, 410):
                 await finish('rejected')
                 if status in (403, 404, 410) and ref:
-                    await asyncio.to_thread(self.store.disable, ref['tenant'], ref['object_id'])
+                    await blocking(self.store.disable, ref['tenant'], ref['object_id'])
             elif status == 429:
                 await finish('pending' if event['attempts'] < self.MAX_ATTEMPTS else 'failed', delay=retry_after(error))
             elif submitting:

@@ -1,6 +1,6 @@
 # testar_sistema_completo.py
 """
-Script de teste automatizado do Byte Bot de Chamados (ATUALIZADO).
+Script de teste automatizado do Otto — Assistente GLPI (ATUALIZADO).
 Alinha os testes ao novo fluxo de formulários:
   - confirmação do formulário antes de iniciar
   - autorização de cadastro via GLPI

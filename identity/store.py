@@ -5,7 +5,7 @@ from pathlib import Path
 import sqlite3
 from uuid import UUID
 
-ROOT = Path(__file__).resolve().parents[1]
+from runtime_paths import ROOT
 
 
 def guid(value):

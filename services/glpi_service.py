@@ -356,7 +356,7 @@ class GLPIService:
         try:
             followup_url = f"{self.url}/ITILFollowup"
 
-            content = "🤖 Chamado aberto pelo Teams - Otto Bot de Chamados"
+            content = "🤖 Chamado aberto pelo Teams - Otto — Assistente GLPI"
 
             payload = {
                 "input": {

@@ -212,7 +212,7 @@ class DynamicFormProcessor:
             )
         if text_lower in ["quem é você", "quem e voce", "sobre", "about", "o que você faz", "o que voce faz", "como funciona"]:
             return (
-                f"🤖 **Olá, {first_name}!** Eu sou o **Byte Bot de Chamados**.\n\n"
+                f"🤖 **Olá, {first_name}!** Eu sou o **Otto — Assistente GLPI**.\n\n"
                 f"**O que posso fazer:**\n"
                 f"• 📝 Abrir chamados de manutenção\n"
                 f"• 👤 Cadastrar novos colaboradores *(restrito)*\n"

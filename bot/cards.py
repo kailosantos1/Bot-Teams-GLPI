@@ -185,9 +185,8 @@ def parse_button_action(activity: Any) -> Optional[str]:
 CHOICE_GUIDANCE = "Toque em uma opção ou digite o número."
 MENU_TEXT = "👋 {greeting} Como posso ajudar?\n\n" + CHOICE_GUIDANCE
 OPEN_TICKET_TEXT = (
-    "📝 Vamos abrir seu chamado! Descreva o que você precisa.\n\n"
-    "Exemplos: problema na impressora, problema no FlexSmart ou cadastro de novo colaborador.\n\n"
-    "Para voltar, toque no botão ou digite 0."
+    "📝 O que você precisa?\n\n"
+    "Ex.: impressora com problema, erro no FlexSmart ou cadastro de colaborador."
 )
 CONSULT_TEXT = "Não consegui confirmar seu acesso aos chamados. Entre em contato com o suporte de TI."
 INTERRUPT_TEXT = "⚠️ você já tem um chamado em preenchimento ({form_name}).\n\nO que deseja fazer? Toque em uma opção ou digite o número."

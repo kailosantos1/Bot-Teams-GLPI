@@ -15,8 +15,9 @@ from identity.service import IdentityService
 from identity.store import LinkStore
 from identity.glpi import GLPIUserReader
 from identity.email_lookup import GLPIEmailLookup
+from notifications.manager import manager as notification_manager
 
-app = FastAPI(title="Byte Bot de Chamados API")
+app = FastAPI(title="Otto — Assistente GLPI API")
 
 adapter, credential_provider, identity_key = _build_adapter(settings)
 identity_service = IdentityService(LinkStore(settings.IDENTITY_DB_PATH),
@@ -106,6 +107,22 @@ async def on_error(context: TurnContext, error: Exception):
 
 
 adapter.on_turn_error = on_error
+
+
+@app.on_event("startup")
+async def on_startup():
+    try:
+        await notification_manager.start()
+    except Exception:
+        logger.error("Falha ao iniciar worker de notificações no startup")
+
+
+@app.on_event("shutdown")
+async def on_shutdown():
+    try:
+        await notification_manager.stop()
+    except Exception:
+        logger.error("Falha ao encerrar worker de notificações no shutdown")
 
 
 async def logic_process_message(turn_context: TurnContext):
@@ -207,7 +224,7 @@ async def health_check():
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
         "version": "1.0.0",
-        "bot": "Byte Bot de Chamados"
+        "bot": "Otto — Assistente GLPI"
     }
 
 
@@ -221,7 +238,7 @@ async def status_check():
         "status": "running",
         "timestamp": datetime.now().isoformat(),
         "version": "1.0.0",
-        "bot": "Byte Bot de Chamados",
+        "bot": "Otto — Assistente GLPI",
         "forms_loaded": len(FORMS_CONFIG),
         "forms_available": list(FORMS_CONFIG.keys()),
         "glpi_configured": bool(settings.GLPI_URL and settings.GLPI_APP_TOKEN),

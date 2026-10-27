@@ -3,6 +3,7 @@ import os
 import yaml
 import logging
 import traceback
+from runtime_paths import ROOT
 try:
     from pydantic_settings import BaseSettings
 except ImportError:
@@ -37,11 +38,11 @@ class Settings(BaseSettings):
     NOTIFICATIONS_ENABLED: bool = False
     NOTIFICATIONS_SUPPORT_GROUP_IDS: str = ""
     NOTIFICATIONS_INTEGRATION_IDS: str = ""
-    NOTIFICATIONS_INTERVAL: int = 60
+    NOTIFICATIONS_INTERVAL: int = 10
     IDENTITY_DB_PATH: str = "data/identity.sqlite3"
 
     class Config:
-        env_file = ".env"
+        env_file = str(ROOT / ".env")
         extra = "ignore"
 
 
@@ -77,7 +78,7 @@ def _validate_forms_dependencies(forms: dict) -> None:
 
 
 def load_forms_config():
-    config_path = os.path.join(os.path.dirname(__file__), "config", "forms.yaml")
+    config_path = ROOT / "config" / "forms.yaml"
     try:
         with open(config_path, "r", encoding="utf-8") as f:
             forms = yaml.safe_load(f).get("forms", {})

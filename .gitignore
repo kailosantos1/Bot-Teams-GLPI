@@ -36,7 +36,10 @@ AGENTS.md
 
 tests/
 
-.obsidian/
+
 # Spec de implantação revisado e locks locais persistentes
 !otto.spec
 *.notifications.lock
+
+# Notas locais do Obsidian
+.obsidian/

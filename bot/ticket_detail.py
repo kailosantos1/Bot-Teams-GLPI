@@ -7,7 +7,7 @@ from identity.replies import ReplyStore, MAX_REPLY, valid_reply
 from services.ticket_conversation import TicketConversation, AccessDenied
 from services.reply_sender import ReplySender
 from services.ticket_content import pages, PAGE_SIZE
-from bot.ticket_presentation import display_title
+from bot.ticket_presentation import detail_title
 from bot.activity_attachments import has_real_attachments
 from services.ticket_query import STATUS_LABELS
 
@@ -41,7 +41,7 @@ async def details(context, result, binding, state, tid=None, offset=0):
     row = await asyncio.to_thread(service.details, result.glpi_user_id, tid)
     state.update(ticket=tid, view='details', part=offset)
     state.pop('draft', None)
-    title = display_title(row['title'], tid)
+    title = detail_title(row['title'], tid)
     description = pages(row['content'])
     title_parts = pages(title) if len(title) > PAGE_SIZE else []
     chunks = title_parts + description
@@ -55,7 +55,7 @@ async def details(context, result, binding, state, tid=None, offset=0):
         body = chunks[offset]
         if title_parts:
             title = '(Título nas páginas anteriores)'
-        heading = '📝 Solicitação' + (f' ({offset + 1}/{len(chunks)})' if len(chunks) > 1 and not title_parts else '')
+        heading = '📝 Descrição do problema:' + (f' ({offset + 1}/{len(chunks)})' if len(chunks) > 1 and not title_parts else '')
     text = (f"🎫 Chamado #{tid}{position}\n{title}\nSituação: {STATUS_LABELS[row['status']]}\n\n"
             f"{heading}\n{body}")
     actions = [('1', 'Conversa'), ('2', 'Responder'), ('3', 'Meus chamados'), ('0', 'Menu')]

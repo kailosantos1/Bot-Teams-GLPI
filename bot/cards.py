@@ -319,3 +319,31 @@ def build_interrupt_invalid_activity(first_name: str, confirmation: str = None) 
 def build_exit_activity() -> Activity:
     return Activity(type=ActivityTypes.message, text="Até logo! Quando precisar, é só enviar uma mensagem.")
 
+
+def build_ticket_created_activity(form_name: str, ticket_id: int = None, *,
+                                  first_name: str = None,
+                                  notifications_enabled: bool = False) -> Activity:
+    follow_up = ("🔔 Avisarei por aqui quando o suporte responder."
+                 if notifications_enabled else
+                 "Você pode acompanhá-lo em Consultar chamados.")
+    if ticket_id is not None:
+        success = (f"✅ Sucesso, {first_name}! Chamado #{ticket_id} aberto no GLPI."
+                   if first_name else f"✅ Chamado #{ticket_id} aberto no GLPI.")
+        text = f"{success}\nFormulário: {form_name}.\n\n{follow_up}"
+    else:
+        success = (f"✅ Sucesso, {first_name}! Solicitação registrada no GLPI."
+                   if first_name else "✅ Solicitação registrada no GLPI.")
+        text = (f"{success}\nFormulário: {form_name}.\n\n"
+                f"O número do chamado ainda não pôde ser confirmado.\n\n{follow_up}")
+    card = HeroCard(
+        text=text,
+        buttons=[
+            _btn("Meus chamados", "2", "consult_tickets"),
+            _btn("Menu", "0", "menu"),
+        ],
+    )
+    return Activity(
+        type=ActivityTypes.message,
+        attachments=[_card_attachment(card, paragraphs=True)],
+    )
+

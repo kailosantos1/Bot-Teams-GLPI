@@ -131,6 +131,75 @@ class _Description(HTMLParser):
         text = ''.join(cls.render(child) for child in children)
         return '\n\n' + text + '\n\n' if tag in cls.BLOCKS else text
 
+    @classmethod
+    def nodes(cls, node, tag):
+        if isinstance(node, str):
+            return
+        if node[0] == tag:
+            yield node
+        for child in node[1]:
+            yield from cls.nodes(child, tag)
+
+
+_DESCRIPTION_LABELS = frozenset({'descrição do problema', 'descreva o problema', 'problema'})
+_FORM_LABELS = _DESCRIPTION_LABELS | frozenset({
+    'tipo', 'tipo de solicitação', 'equipamento', 'local', 'local da solicitação',
+    'qual filial?', 'contato', 'número', 'urgência',
+    'qual o melhor canal para entrarmos em contato com você?',
+    'insira o número do whatsapp', 'insira o email do microsoft teams',
+    'qual o tipo de atendimento você deseja?', 'qual liberação?', 'qual tela?',
+    'qual o nome completo do novo colaborador?', 'observações adicionais',
+})
+
+
+def _clean_rendered(text):
+    text = text.replace('\r\n', '\n').replace('\r', '\n')
+    text = '\n'.join(' '.join(line.split()) for line in text.split('\n'))
+    return passive(re.sub(r'\n{3,}', '\n\n', text).strip())
+
+
+def form_description(source):
+    """Return only a structurally labelled Formcreator description.
+
+    ``None`` means the source does not safely look like a supported Formcreator
+    rendering and should use the ordinary sanitized fallback. A string means a
+    form was recognized; the fixed unavailable text represents absent, empty or
+    ambiguous description fields.
+    """
+    if not isinstance(source, str) or len(source) > MAX_SOURCE:
+        raise ContentLimit()
+    parser = _Description()
+    try:
+        parser.feed(source)
+        parser.close()
+    except ContentLimit:
+        return None
+    form_evidence = False
+    descriptions = []
+    for row in parser.nodes(parser.root, 'tr'):
+        cells = [child for child in row[1]
+                 if isinstance(child, list) and child[0] in {'td', 'th'}]
+        if len(cells) != 2 or not (cells[0][0] == 'th' or parser.marked_label(cells[0])):
+            continue
+        label = _clean_rendered(parser.render(cells[0])).rstrip(':').strip().casefold()
+        if label in _FORM_LABELS:
+            form_evidence = True
+        if label in _DESCRIPTION_LABELS:
+            descriptions.append(_clean_rendered(parser.render(cells[1])))
+    visible = _clean_rendered(parser.render(parser.root)).casefold()
+    if 'dados do formulário' in visible:
+        form_evidence = True
+    if not form_evidence:
+        return None
+    if len(descriptions) != 1 or not descriptions[0]:
+        return 'Descrição não disponível nesta visualização.'
+    return descriptions[0]
+
+
+def ticket_description(source):
+    extracted = form_description(source)
+    return description_text(source) if extracted is None else extracted
+
 
 def description_text(source):
     """Sanitized paragraphs and marked label/value rows; no content summarizing.
@@ -147,6 +216,4 @@ def description_text(source):
     except ContentLimit:
         # Unknown/deep nesting keeps the established sanitized fallback.
         return html_text(source)
-    text = parser.render(parser.root).replace('\r\n', '\n').replace('\r', '\n')
-    text = '\n'.join(' '.join(line.split()) for line in text.split('\n'))
-    return passive(re.sub(r'\n{3,}', '\n\n', text).strip())
+    return _clean_rendered(parser.render(parser.root))

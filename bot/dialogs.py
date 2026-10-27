@@ -1,9 +1,10 @@
+import asyncio
 import json
 from uuid import uuid4
 import re
 import base64
 import traceback
-from config import FORMS_CONFIG, logger
+from config import FORMS_CONFIG, logger, settings
 from services.glpi_service import GLPIService
 from bot.state import user_profile_accessor, nav_state_accessor
 from bot.utils import UserNameFormatter
@@ -22,6 +23,7 @@ from bot.cards import (
     build_invalid_menu_activity,
     build_invalid_consult_activity,
     build_interrupt_invalid_activity,
+    build_ticket_created_activity,
 )
 
 glpi = GLPIService()
@@ -45,13 +47,6 @@ _COLLECT_ATTACHMENT_MSG = (
     "2️⃣ Aguarde eu confirmar cada um\n\n"
     "3️⃣ Quando terminar, digite **'concluir'**"
 )
-
-FLEXSMART_WARNING = (
-    "🛑 ATENÇÃO: O atendimento para o FlexSmart mudou! Utilize o formulário "
-    "\"Solicitações sistema FlexSmart\" no menu principal. Chamados de FlexSmart "
-    "abertos por este formulário serão cancelados automaticamente a partir do dia 01/10."
-)
-
 
 class DynamicFormProcessor:
     @staticmethod
@@ -106,8 +101,9 @@ class DynamicFormProcessor:
             idx = int(clean_input) - 1
             if 0 <= idx < len(options):
                 return True, options[idx]
+        comparable_input = " ".join(clean_input.lower().split())
         for opt in options:
-            if clean_input.lower() == opt.lower():
+            if comparable_input == " ".join(opt.lower().split()):
                 return True, opt
         options_list_str = ", ".join([f"'{opt}'" for opt in options])
         return False, f"⚠️ Opção inválida! Escolha o número de **1 a {len(options)}** ou digite uma das opções: {options_list_str}."
@@ -429,12 +425,10 @@ class DynamicFormProcessor:
             text = f"✅ Identifiquei a solicitação: {session['form_name']}.\n\n" + text
         session.setdefault('choice_session', uuid4().hex)
         await user_profile_accessor.set(turn_context, session)
-        # Preserve warnings without repeating the option list from textual fallback.
+        # Preserve validation warnings without repeating the option list from textual fallback.
         if response.startswith(('⚠️', '⛔')):
             warning = '⚠️ Selecione pelo menos 1 item!' if 'selecione pelo menos 1 item!' in response else '⚠️ Opção inválida. Use as opções atuais.'
             text = warning + '\n\n' + text
-        if FLEXSMART_WARNING in response:
-            text = FLEXSMART_WARNING + '\n\n' + text
         same = signature(session) == ui.get('signature') and binding == ui.get('binding')
         if not same:
             page = 0
@@ -692,36 +686,6 @@ class DynamicFormProcessor:
 
                 q_id = str(current_q["id"])
                 is_multiple = current_q.get("multiple", False)
-
-                # Aviso FlexSmart
-                if current_q.get("id") == "104":
-                    valido, resultado = cls.validate_and_normalize_answer(text_clean, current_q)
-                    if not valido:
-                        return resultado
-
-                    session["answers"][q_id] = resultado
-                    session["pending_questions"].pop(0)
-                    await profile_acc.set(turn_context, session)
-
-                    aviso = ""
-                    if resultado == "FlexSmart":
-                        aviso = FLEXSMART_WARNING
-
-                    next_q = cls.get_next_valid_question(session)
-
-                    if next_q:
-                        next_prompt = cls.format_question_prompt(next_q, None, user_name)
-                        if aviso:
-                            return f"{aviso}\n\n{next_prompt}"
-                        else:
-                            return next_prompt
-
-                    session["stage"] = "ask_attachment"
-                    await profile_acc.set(turn_context, session)
-                    if aviso:
-                        return f"{aviso}\n\n{_ASK_ATTACHMENT_MSG.format(first_name=first_name)}"
-                    else:
-                        return _ASK_ATTACHMENT_MSG.format(first_name=first_name)
 
                 # Múltipla escolha
                 if is_multiple:
@@ -1061,7 +1025,7 @@ class DynamicFormProcessor:
             )
             glpi_svc = getattr(cls, "glpi", glpi)
             try:
-                success, msg = glpi_svc.create_form_answer(
+                result = glpi_svc.create_form_answer(
                     form_id,
                     final_answers,
                     requester_email=user_email,
@@ -1082,15 +1046,18 @@ class DynamicFormProcessor:
                     f"novamente daqui a pouco?\n\n"
                     f"Se continuar dando erro, chama o suporte de TI — desculpa o transtorno! 🙏"
                 )
-            if success:
-                anexo_info = f"\n\n📎 {len(attachments_bytes)} arquivo(s) anexado(s)." if attachments_bytes else ""
-                return (
-                    f"✅ **Sucesso, {first_name}!** Seu chamado foi gerado no GLPI "
-                    f"usando o formulário **{form_name}**.{anexo_info}\n\n"
-                    f"Você receberá atualizações por email."
+            if result.created:
+                from notifications.capture import enabled_for_context
+                notifications_enabled = await asyncio.to_thread(
+                    enabled_for_context, turn_context, settings
+                )
+                safe_name = first_name if first_name != "Usuário" else None
+                return build_ticket_created_activity(
+                    form_name, result.ticket_id, first_name=safe_name,
+                    notifications_enabled=notifications_enabled,
                 )
             else:
-                logger.error(f"GLPI retornou falha: {msg}")
+                logger.error(f"GLPI retornou falha: {result.error}")
                 return (
                     f"😕 **Poxa, {first_name}, não consegui registrar seu chamado agora.**\n\n"
                     f"Deve ser algo passageiro no sistema. Tenta de novo daqui a pouquinho?\n\n"

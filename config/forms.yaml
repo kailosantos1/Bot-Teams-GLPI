@@ -286,27 +286,15 @@ forms:
     questions:
       tipo_solicitacao:
         id: 2
-        label: "Qual o tipo da solicitação?"
+        label: "Tipo de Solicitação"
         required: true
         options:
           - "Manutenção de Equipamentos"
-          - "Manutenção de Sistemas"
-          - "Acessos"
-
-      sistema_problema:
-        id: 104
-        label: "Qual sistema está com problema?"
-        required: true
-        depends_on:
-          field: "tipo_solicitacao"
-          value: "Manutenção de Sistemas"
-        options:
-          - "FlexSmart"
-          - "Outros Sistemas"
+          - "Manutenção de Acessos"
 
       equipamento:
         id: 26
-        label: "Qual o equipamento ou sistema referente à solicitação?"
+        label: "Equipamento"
         required: true
         options:
           - "Computador/Hardware"
@@ -314,25 +302,25 @@ forms:
           - "Smartphone/Mobile"
           - "Sistemas/Softwares"
           - "Servidores/Pastas de Arquivos"
-          - "Internet/Páginas da Web"
+          - "Internet/Páginas da Web"
           - "Outros"
 
       descricao_problema:
         id: 3
-        label: "Descreva o problema ou solicitação:"
+        label: "Descrição do problema"
         required: true
 
       local_solicitacao:
         id: 6
-        label: "Qual o local da solicitação?"
+        label: "Local da Solicitação"
         required: true
         options:
-          - "Matriz"
           - "Filial"
+          - "Matriz"
 
       filial:
         id: 7
-        label: "Escolha a sua Filial:"
+        label: "Qual Filial?"
         required: true
         depends_on:
           field: "local_solicitacao"
@@ -346,16 +334,16 @@ forms:
 
       canal_contato:
         id: 70
-        label: "Qual o melhor canal para contato?"
+        label: "Qual o melhor canal para entrarmos em contato com você?"
         required: true
         options:
-          - "Microsoft Teams"
           - "WhatsApp"
+          - "Microsoft Teams"
           - "OPA"
 
       whatsapp:
         id: 71
-        label: "Qual o número do seu WhatsApp com DDD?"
+        label: "Insira o número do WhatsApp"
         required: true
         depends_on:
           field: "canal_contato"
@@ -363,7 +351,7 @@ forms:
 
       email_teams:
         id: 72
-        label: "Qual o seu e-mail do Microsoft Teams?"
+        label: "Insira o email do Microsoft Teams"
         required: true
         depends_on:
           field: "canal_contato"

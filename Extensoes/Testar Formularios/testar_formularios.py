@@ -19,6 +19,7 @@ from config import logger
 from bot.dialogs import DynamicFormProcessor
 from bot.utils import UserNameFormatter
 from bot.auth import UserAuthorization
+from services.glpi_service import FormCreationResult
 
 
 # ============================================================
@@ -59,15 +60,16 @@ class MockGLPI:
             "Teste User": "teste.user@compasi.com.br",
         }
 
-    def create_form_answer(self, form_id, form_values, requester_id=None):
+    def create_form_answer(self, form_id, form_values, requester_email=None, attachments=None):
         self.chamados_criados.append({
             "form_id": form_id,
             "valores": form_values,
-            "requester_id": requester_id,
+            "requester_email": requester_email,
+            "attachments": attachments,
             "timestamp": datetime.now().isoformat()
         })
         logger.info(f"[MOCK] Chamado criado! Form ID: {form_id}")
-        return True, "Chamado registrado no GLPI com sucesso!"
+        return FormCreationResult(True, formanswer_id=123, ticket_id=1035)
 
     def get_user_email(self, nome):
         email = self.usuarios_mock.get(nome)
@@ -338,8 +340,8 @@ class TestadorFormularios:
             "1",   # tipo_solicitacao: Manutenção de Equipamentos
             "1",   # equipamento: Computador/Hardware
             "Está muito lento e travando",   # descricao
-            "1",   # local_solicitacao: Matriz
-            "1",   # canal_contato: Microsoft Teams
+            "2",   # local_solicitacao: Matriz
+            "2",   # canal_contato: Microsoft Teams
             "joao.silva@compasi.com.br",   # email_teams
             "2",   # urgencia: Média
         ]
@@ -348,33 +350,32 @@ class TestadorFormularios:
             "Manutenção → Equipamentos (Matriz, Teams)"
         )
 
-    async def testar_manutencao_sistemas_flexsmart(self):
-        """Manutenção → Manutenção de Sistemas → FlexSmart."""
+    async def testar_manutencao_filial_whatsapp(self):
+        """Manutenção → Equipamentos → Filial → WhatsApp."""
         mensagens = [
             "erro no sistema",
-            "2",   # Manutenção de Sistemas
-            "1",   # sistema_problema: FlexSmart
+            "1",   # Manutenção de Equipamentos
             "4",   # equipamento: Sistemas/Softwares
             "Sistema travando ao abrir tela de cadastro",   # descricao
-            "2",   # local_solicitacao: Filial
+            "1",   # local_solicitacao: Filial
             "2",   # filial: Lages
-            "2",   # canal_contato: WhatsApp
+            "1",   # canal_contato: WhatsApp
             "49 98888-7777",   # whatsapp
             "3",   # urgencia: Alta
         ]
         await self.simular_conversa(
             mensagens, "Pedro Costa",
-            "Manutenção → Sistemas (FlexSmart, Filial Lages)"
+            "Manutenção → Equipamentos (Filial Lages, WhatsApp)"
         )
 
     async def testar_manutencao_acessos(self):
         """Manutenção → Acessos."""
         mensagens = [
             "preciso de um acesso",
-            "3",   # tipo_solicitacao: Acessos
+            "2",   # tipo_solicitacao: Manutenção de Acessos
             "4",   # equipamento: Sistemas/Softwares
             "Preciso de acesso ao sistema ERP",   # descricao
-            "1",   # local: Matriz
+            "2",   # local: Matriz
             "3",   # canal_contato: OPA
             "1",   # urgencia: Baixa
         ]
@@ -549,7 +550,7 @@ class TestadorFormularios:
 
         # Manutenção (ATUALIZADO)
         await self.testar_manutencao_equipamentos()
-        await self.testar_manutencao_sistemas_flexsmart()
+        await self.testar_manutencao_filial_whatsapp()
         await self.testar_manutencao_acessos()
 
         # Cadastro (ATUALIZADO)

@@ -1,5 +1,7 @@
 """Called only with the result of the existing live authenticated resolver."""
 import asyncio
+import json
+from types import SimpleNamespace
 from urllib.parse import urlsplit
 from identity.notifications import NotificationStore
 from .policy import Policy
@@ -40,3 +42,27 @@ async def capture(context, result, config):
             await asyncio.to_thread(store.disable, result.identity.tenant_id, result.identity.object_id)
         except Exception:
             pass
+
+
+def enabled_for_context(context, config):
+    """Fail-closed presentation check; never creates a link or a reference."""
+    policy = Policy.configured(config)
+    if policy is None:
+        return False
+    try:
+        from botbuilder.core import TurnContext
+        ref = TurnContext.get_conversation_reference(context.activity).serialize()
+        ref.pop('activityId', None)
+        for key in ('user', 'bot'):
+            ref[key] = {k: v for k, v in ref[key].items() if k in ('id', 'aadObjectId')}
+        tenant = ref['conversation']['tenantID']
+        object_id = ref['user']['aadObjectId']
+        identity = SimpleNamespace(member_id=ref['user']['id'], object_id=object_id)
+        if tenant != policy.tenant or not valid_reference(ref, identity, policy.app):
+            return False
+        store = NotificationStore(config.IDENTITY_DB_PATH)
+        stored = store.reference_for(tenant, object_id)
+        return bool(stored and stored['app'] == policy.app
+                    and json.loads(stored['reference']) == ref and store.current(stored))
+    except Exception:
+        return False

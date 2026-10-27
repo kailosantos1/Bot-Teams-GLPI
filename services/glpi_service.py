@@ -1,7 +1,16 @@
 # services/glpi_service.py
 import requests
 import json
+from dataclasses import dataclass
 from config import settings, logger
+
+
+@dataclass(frozen=True)
+class FormCreationResult:
+    created: bool
+    formanswer_id: int | None = None
+    ticket_id: int | None = None
+    error: str | None = None
 
 
 class GLPIService:
@@ -16,6 +25,16 @@ class GLPIService:
         "alta": 4,
         "muito alta": 5,
     }
+
+    @staticmethod
+    def _positive_id(value) -> int | None:
+        if isinstance(value, bool):
+            return None
+        try:
+            parsed = int(value)
+        except (TypeError, ValueError):
+            return None
+        return parsed if parsed > 0 else None
 
     def __init__(self):
         self.url = settings.GLPI_URL.rstrip('/')
@@ -228,14 +247,16 @@ class GLPIService:
                 if isinstance(items, list) and items:
                     tickets_id = items[0].get('tickets_id')
 
-                    if tickets_id:
+                    tickets_id = self._positive_id(tickets_id)
+                    if tickets_id is not None:
                         logger.info(f"✅ Ticket REAL encontrado: ID={tickets_id}")
                         return tickets_id
 
                 elif isinstance(items, dict):
                     tickets_id = items.get('tickets_id')
 
-                    if tickets_id:
+                    tickets_id = self._positive_id(tickets_id)
+                    if tickets_id is not None:
                         logger.info(f"✅ Ticket REAL encontrado: ID={tickets_id}")
                         return tickets_id
 
@@ -432,7 +453,7 @@ class GLPIService:
         form_values: dict,
         requester_email: str = None,
         attachments: list[tuple[str, bytes]] | None = None,
-    ) -> tuple[bool, str]:
+    ) -> FormCreationResult:
         """
         Cria o chamado, adiciona o requerente correto, remove o Bot Teams e,
         se houver anexos, sobe cada um e vincula ao ticket DEPOIS que ele
@@ -441,7 +462,7 @@ class GLPIService:
         """
         session_token = self._get_session()
         if not session_token:
-            return False, "Falha na autenticação com a API do GLPI."
+            return FormCreationResult(False, error="Falha na autenticação com a API do GLPI.")
 
         headers = {
             "Content-Type": "application/json",
@@ -494,7 +515,7 @@ class GLPIService:
 
             if res.status_code not in [200, 201]:
                 logger.error(f"Erro GLPI Status {res.status_code}: {res.text}")
-                return False, f"Erro ao criar no GLPI: {res.text}"
+                return FormCreationResult(False, error=f"Erro ao criar no GLPI: {res.text}")
 
             logger.info(f"✅ FormAnswer criado!")
 
@@ -511,6 +532,7 @@ class GLPIService:
                     elif isinstance(response_data, list) and response_data:
                         formanswer_id = response_data[0].get('id')
 
+                formanswer_id = self._positive_id(formanswer_id)
                 logger.info(f"ID do FormAnswer: {formanswer_id}")
             except Exception as e:
                 logger.warning(f"Não foi possível extrair ID: {e}")
@@ -519,7 +541,9 @@ class GLPIService:
             created_ticket_id = None
 
             if formanswer_id:
-                created_ticket_id = self._get_real_ticket_id(int(formanswer_id), headers)
+                created_ticket_id = self._positive_id(
+                    self._get_real_ticket_id(formanswer_id, headers)
+                )
 
             logger.info(f"Ticket REAL: {created_ticket_id}")
 
@@ -562,10 +586,14 @@ class GLPIService:
                 if noted:
                     logger.info(f"✅ Nota do Teams adicionada")
 
-            return True, "Chamado registrado no GLPI com sucesso!"
+            return FormCreationResult(
+                True,
+                formanswer_id=formanswer_id,
+                ticket_id=created_ticket_id,
+            )
 
         except Exception as e:
             logger.exception(f"Falha na comunicação: {e}")
-            return False, f"Erro: {str(e)}"
+            return FormCreationResult(False, error=f"Erro: {str(e)}")
         finally:
             self._kill_session(session_token)

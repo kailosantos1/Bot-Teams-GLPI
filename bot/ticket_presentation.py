@@ -17,6 +17,15 @@ def display_title(title, ticket=None):
     return text
 
 
+def detail_title(title, ticket=None):
+    """Compact detail heading without discarding the ticket's source meaning."""
+    text = title.strip()
+    for prefix, label in [('Solicitações de ', 'Solicitações'), ('Solicitação de ', 'Solicitação')]:
+        if text.lower().startswith(prefix.lower()) and text[len(prefix):].strip():
+            return f'{label} ｜ {text[len(prefix):].strip()}'
+    return display_title(text, ticket)
+
+
 def title_summary(title):
     text = display_title(title)
     if len(text) <= SUMMARY_LIMIT:

@@ -36,6 +36,7 @@ import bot.dialogs as dialogs
 from bot.dialogs import DynamicFormProcessor
 from bot.auth import UserAuthorization
 from bot.attachments import TeamsAttachmentHandler
+from services.glpi_service import FormCreationResult
 
 
 # ============================================================
@@ -117,7 +118,7 @@ class MockGLPI:
             "requester_email": requester_email,
             "attachments": attachments,
         })
-        return True, "Chamado criado com sucesso (mock)"
+        return FormCreationResult(True, formanswer_id=123, ticket_id=1035)
 
 
 # ============================================================
@@ -302,18 +303,18 @@ async def test_manutencao_fluxo_completo():
     print("✅ Manutenção fluxo completo ok")
 
 
-async def test_manutencao_sistemas():
-    print("\n[TESTE] Manutenção → Manutenção de Sistemas (FlexSmart)")
+async def test_manutencao_equipamentos_filial():
+    print("\n[TESTE] Manutenção → Equipamentos → Filial")
     ctx = MockTurnContext("Teste User")
     await send(ctx, "preciso de manutenção")
     await send(ctx, "1")
-    await send(ctx, "2")
+    await send(ctx, "1")
     ok = await complete_until_anexo(ctx)
     assert ok, (
-        "Não chegou ao prompt de anexo (Sistemas).\n"
+        "Não chegou ao prompt de anexo (Equipamentos/Filial).\n"
         "Histórico:\n" + "\n".join(f"  - {m[:120]!r}" for m in ctx.sent_messages)
     )
-    print("✅ Manutenção → Sistemas ok")
+    print("✅ Manutenção → Equipamentos/Filial ok")
 
 
 async def test_manutencao_acessos():
@@ -321,7 +322,7 @@ async def test_manutencao_acessos():
     ctx = MockTurnContext("Teste User")
     await send(ctx, "preciso de um acesso")
     await send(ctx, "1")
-    await send(ctx, "3")
+    await send(ctx, "2")
     ok = await complete_until_anexo(ctx)
     assert ok, (
         "Não chegou ao prompt de anexo (Acessos).\n"
@@ -535,7 +536,7 @@ async def run_all():
 
     # Manutenção
     await test_manutencao_fluxo_completo()
-    await test_manutencao_sistemas()
+    await test_manutencao_equipamentos_filial()
     await test_manutencao_acessos()
 
     # FlexSmart

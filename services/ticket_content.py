@@ -199,8 +199,35 @@ def form_description(source):
             form_evidence = True
         if label in _DESCRIPTION_LABELS:
             descriptions.append(_clean_rendered(parser.render(cells[1])))
+    # Check for div-based format (Formcreator variant)
+    for div in parser.nodes(parser.root, 'div'):
+        children = div[1]
+        if not children:
+            continue
+        label_node = None
+        label_idx = -1
+        for i, child in enumerate(children):
+            if isinstance(child, list) and child[0] in {'b', 'strong'}:
+                label_node = child
+                label_idx = i
+                break
+        if label_node is None:
+            continue
+        raw_label = parser.render(label_node)
+        label = _normalize_form_label(raw_label)
+        if label in _FORM_LABELS:
+            form_evidence = True
+        if label in _DESCRIPTION_LABELS:
+            value_parts = []
+            for j in range(label_idx + 1, len(children)):
+                value_parts.append(children[j])
+            if not value_parts:
+                descriptions.append('')
+                continue
+            value_text = ''.join(parser.render(child) for child in value_parts)
+            descriptions.append(_clean_rendered(value_text))
     visible = _clean_rendered(parser.render(parser.root)).casefold()
-    if 'dados do formulário' in visible:
+    if 'dados do formulário' in visible or 'abertura de chamado' in visible:
         form_evidence = True
     if not form_evidence:
         return None

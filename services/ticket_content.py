@@ -152,6 +152,18 @@ _FORM_LABELS = _DESCRIPTION_LABELS | frozenset({
 })
 
 
+import re
+import unicodedata
+
+
+def _normalize_form_label(text):
+    s = text.strip()
+    # strip leading numbering like "3)", "3.", "3 -", "3:"
+    s = re.sub(r'^\s*\d+\s*[\)\.\-:]\s*', '', s)
+    s = s.strip().rstrip(':').strip()
+    return s.casefold()
+
+
 def _clean_rendered(text):
     text = text.replace('\r\n', '\n').replace('\r', '\n')
     text = '\n'.join(' '.join(line.split()) for line in text.split('\n'))
@@ -181,7 +193,8 @@ def form_description(source):
                  if isinstance(child, list) and child[0] in {'td', 'th'}]
         if len(cells) != 2 or not (cells[0][0] == 'th' or parser.marked_label(cells[0])):
             continue
-        label = _clean_rendered(parser.render(cells[0])).rstrip(':').strip().casefold()
+        raw_label = parser.render(cells[0])
+        label = _normalize_form_label(raw_label)
         if label in _FORM_LABELS:
             form_evidence = True
         if label in _DESCRIPTION_LABELS:

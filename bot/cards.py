@@ -329,7 +329,7 @@ def build_ticket_created_activity(form_name: str, ticket_id: int = None, *,
     if ticket_id is not None:
         success = (f"✅ Sucesso, {first_name}! Chamado #{ticket_id} aberto no GLPI."
                    if first_name else f"✅ Chamado #{ticket_id} aberto no GLPI.")
-        text = f"{success}\nFormulário: {form_name}.\n\n{follow_up}"
+        text = f"{success}\nFormulário: {form_name}.\n{follow_up}"
     else:
         success = (f"✅ Sucesso, {first_name}! Solicitação registrada no GLPI."
                    if first_name else "✅ Solicitação registrada no GLPI.")
@@ -337,10 +337,7 @@ def build_ticket_created_activity(form_name: str, ticket_id: int = None, *,
                 f"O número do chamado ainda não pôde ser confirmado.\n\n{follow_up}")
     card = HeroCard(
         text=text,
-        buttons=[
-            _btn("Meus chamados", "2", "consult_tickets"),
-            _btn("Menu", "0", "menu"),
-        ],
+        buttons=[],
     )
     return Activity(
         type=ActivityTypes.message,

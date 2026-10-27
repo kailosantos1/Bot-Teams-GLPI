@@ -35,3 +35,5 @@ env/
 AGENTS.md
 
 tests/
+
+.obsidian/

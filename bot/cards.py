@@ -136,14 +136,20 @@ def _btn(title: str, text: str, action: str, confirmation: str = None) -> CardAc
     )
 
 
-def _card_attachment(card: HeroCard) -> Attachment:
+def _card_attachment(card: HeroCard, *, paragraphs: bool = False) -> Attachment:
     # HeroCard.text supports HTML, not message Markdown. All callers author plain
     # text. Encode it once at the boundary so external values cannot become HTML.
     # A copy keeps the caller's model unchanged; titles/buttons/payloads are intact.
     if isinstance(card, HeroCard):
         card = copy(card)
         if card.text is not None:
-            card.text = escape(card.text, quote=False)
+            if paragraphs:
+                # Only authored paragraph wrappers. External text is encoded
+                # before insertion and is never parsed as markup.
+                card.text = ''.join('<p>' + escape(line, quote=False) + '</p>'
+                                    for line in card.text.splitlines() if line.strip())
+            else:
+                card.text = escape(card.text, quote=False)
     if CardFactory is not None:
         return CardFactory.hero_card(card)
     return Attachment(content_type="application/vnd.microsoft.card.hero", content=card)

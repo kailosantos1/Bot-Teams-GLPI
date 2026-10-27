@@ -4,7 +4,7 @@ from html import escape
 import requests
 from identity.store import user_id
 from services.ticket_query import TicketQuery, QueryError
-from services.ticket_content import html_text, passive
+from services.ticket_content import html_text, passive, description_text
 
 
 class AccessDenied(Exception):
@@ -26,7 +26,7 @@ class TicketConversation(TicketQuery):
         with self.session(raw_content=True) as get:
             row = self.authorize(get, uid, tid, content=True)
             row['title'] = html_text(row['title'])
-            row['content'] = html_text(row['content'])
+            row['content'] = description_text(row['content'])
             return row
 
     def author(self, get, uid):

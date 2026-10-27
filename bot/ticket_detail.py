@@ -6,7 +6,8 @@ from config import settings
 from identity.replies import ReplyStore, MAX_REPLY, valid_reply
 from services.ticket_conversation import TicketConversation, AccessDenied
 from services.reply_sender import ReplySender
-from services.ticket_content import passive, pages
+from services.ticket_content import passive, pages, PAGE_SIZE
+from bot.ticket_presentation import display_title, glpi_date
 from services.ticket_query import STATUS_LABELS
 
 service = TicketConversation(settings.GLPI_URL, settings.GLPI_APP_TOKEN, settings.GLPI_USER_TOKEN)
@@ -15,7 +16,7 @@ UNCERTAIN = ('Não recebi a confirmação do envio. Sua mensagem pode ter sido r
              'Não vou reenviar automaticamente. Atualize a conversa para conferir.')
 
 
-async def screen(context, state, text, actions, *, view=None):
+async def screen(context, state, text, actions, *, view=None, paragraphs=False):
     from bot.ticket_consult import card, query_state_accessor
     state = dict(state)
     if view:
@@ -24,7 +25,7 @@ async def screen(context, state, text, actions, *, view=None):
     # A read screen never extends a draft lifetime; SQLite checks its own deadline.
     state['expires'] = time.time() + 300
     await query_state_accessor.set(context, state)
-    response = card(text, state['version'], actions)
+    response = card(text, state['version'], actions, paragraphs=paragraphs, guidance=not paragraphs)
     for attachment in response.attachments:
         for button in attachment.content.buttons:
             button.value = {'detail': button.value['query'], 'version': state['version']}
@@ -39,20 +40,31 @@ async def details(context, result, binding, state, tid=None, offset=0):
     row = await asyncio.to_thread(service.details, result.glpi_user_id, tid)
     state.update(ticket=tid, view='details', part=offset)
     state.pop('draft', None)
-    chunks = pages(row['content'])
+    title = display_title(row['title'], tid)
+    description = pages(row['content'])
+    title_parts = pages(title) if len(title) > PAGE_SIZE else []
+    chunks = title_parts + description
     offset = min(max(0, offset), len(chunks) - 1)
     state['part'] = offset
-    text = (f"🎫 Chamado #{tid} — {row['title'][:120]}\nSituação: {STATUS_LABELS[row['status']]}\n\n"
-            f"📝 Solicitação inicial ({offset + 1}/{len(chunks)}):\n{chunks[offset]}\n\n"
-            )
-    actions = [('1', 'Ver conversa'), ('2', 'Responder chamado'), ('3', 'Voltar aos meus chamados'), ('0', 'Menu principal')]
+    position = f' ({offset + 1}/{len(chunks)})' if title_parts else ''
+    if title_parts and offset < len(title_parts):
+        title, body = chunks[offset], ''
+        heading = f'Título ({offset + 1}/{len(title_parts)})'
+    else:
+        body = chunks[offset]
+        if title_parts:
+            title = '(Título nas páginas anteriores)'
+        heading = '📝 Solicitação' + (f' ({offset + 1}/{len(chunks)})' if len(chunks) > 1 and not title_parts else '')
+    text = (f"🎫 Chamado #{tid}{position}\n{title}\nSituação: {STATUS_LABELS[row['status']]}\n\n"
+            f"{heading}\n{body}")
+    actions = [('1', 'Conversa'), ('2', 'Responder'), ('3', 'Meus chamados'), ('0', 'Menu')]
     if offset:
         actions.append(('7', 'Trecho anterior'))
 
     if offset + 1 < len(chunks):
         actions.append(('9', 'Ver mais'))
 
-    return await screen(context, state, text, actions)
+    return await screen(context, state, text, actions, paragraphs=True)
 
 
 async def history(context, result, state, offset=0):
@@ -61,18 +73,19 @@ async def history(context, result, state, offset=0):
     for message in messages:
         parts = pages(message['content'])
         for i, part in enumerate(parts, 1):
-            chunks.append(f"Autor: {message['author']}\nData: {message['date']} (horário do GLPI)\n"
-                          f"Trecho {i}/{len(parts)}:\n{part}")
+            part_label = f'Trecho {i}/{len(parts)}\n' if len(parts) > 1 else ''
+            chunks.append(f"{message['author']}\n{glpi_date(message['date'])} — horário do GLPI\n\n"
+                          f"{part_label}{part}")
     offset = min(max(0, offset), max(0, len(chunks) - 1))
-    text = (f"💬 Conversa pública do chamado #{state['ticket']}\nMais recentes primeiro.\n\n"
-            + (f'Página {offset + 1}/{len(chunks)}\n' + chunks[offset] if chunks else 'Este chamado ainda não tem mensagens públicas.'))
-    actions = [('4', 'Voltar ao chamado'), ('8', 'Atualizar conversa'), ('3', 'Meus chamados'), ('0', 'Menu principal')]
+    text = (f"💬 Conversa · #{state['ticket']}\nMais recentes primeiro\n\n"
+            + ((f'Página {offset + 1}/{len(chunks)}\n\n' if len(chunks) > 1 else '') + chunks[offset] if chunks else 'Este chamado ainda não tem mensagens públicas.'))
+    actions = [('4', 'Voltar'), ('8', 'Atualizar'), ('3', 'Meus chamados'), ('0', 'Menu')]
 
     if offset:
         actions.append(('7', 'Página anterior'))
     if offset + 1 < len(chunks):
-        actions.append(('9', 'Mensagens anteriores / ver mais'))
-    return await screen(context, dict(state, part=offset), text, actions, view='history')
+        actions.append(('9', 'Mensagens anteriores'))
+    return await screen(context, dict(state, part=offset), text, actions, view='history', paragraphs=True)
 
 
 async def capture(context, state):

@@ -4,6 +4,7 @@ import secrets
 import time
 import unicodedata
 import logging
+from bot.ticket_presentation import title_summary
 from identity.diagnostics import log_identity_failure
 from bot.cards import Activity, HeroCard, CardAction, _card_attachment, is_personal_conversation
 from bot.state import user_state, nav_state_accessor
@@ -28,15 +29,15 @@ def safe_title(title):
     return ' '.join(text.split())[:120] or 'Sem título'
 
 
-def card(text, version, actions):
+def card(text, version, actions, *, paragraphs=False, guidance=True):
     buttons = []
     for action, label in actions:
         title = f'{action} — {label}' if action.isdigit() and not label.startswith(action + ' — ') else label
         buttons.append(CardAction(type='messageBack', title=title, text=action,
                                  display_text=title, value={'query': action, 'version': version}))
-    guidance = '\n\nToque em uma opção ou digite o número.' if any(action.isdigit() for action, _ in actions) else ''
+    guidance = '\n\nToque em uma opção ou digite o número.' if guidance and any(action.isdigit() for action, _ in actions) else ''
     attachments = [_card_attachment(HeroCard(text=text.rstrip() + guidance if offset == 0 else 'Navegação',
-                    buttons=buttons[offset:offset + 5])) for offset in range(0, len(buttons), 5)]
+                    buttons=buttons[offset:offset + 5]), paragraphs=paragraphs) for offset in range(0, len(buttons), 5)]
     return Activity(type='message', text=text if not attachments else None, attachments=attachments)
 
 
@@ -159,15 +160,15 @@ async def handle(context, text):
         version = secrets.token_urlsafe(16)
         await query_state_accessor.set(context, {'binding': binding, 'expires': time.time() + TTL,
                                                 'version': version, 'offset': offset, 'ids': [x['id'] for x in page]})
-        message = '📋 Seus chamados em andamento:\n\n' if items else '✅ Você não tem chamados em aberto no momento.\n\n'
+        message = '📋 Seus chamados\nEscolha um chamado ou digite o número.' if items else '✅ Você não tem chamados em aberto no momento.'
         actions = []
         for i, item in enumerate(page, 1):
-            actions.append((str(i), f"{i} — {safe_title(item['title'])} · Chamado #{item['id']} · {STATUS_LABELS[item['status']]}"))
+            actions.append((str(i), f"{i} — #{item['id']} · {title_summary(safe_title(item['title']))}"))
         for op, label, present in [('7', 'Anteriores', offset > 0), ('9', 'Próximos', offset + 5 < len(items)),
-                                   ('8', 'Atualizar', True), ('0', 'Voltar ao menu', True)]:
+                                   ('8', 'Atualizar', True), ('0', 'Menu', True)]:
             if present:
                 actions.append((op, label))
-        return True, card(message, version, actions)
+        return True, card(message, version, actions, paragraphs=True, guidance=False)
     except Exception:
         logger.warning('ticket_query_failure code=query_unavailable')
         await reset(context)

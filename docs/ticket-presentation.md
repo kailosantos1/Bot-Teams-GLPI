@@ -71,11 +71,9 @@ mesmo fluxo, antes da descrição, em vez de truncado ou enviado sem limite.
 ## Conversa pública
 
 ```text
-💬 Conversa · #1028
-Mais recentes primeiro
+💬 Mensagem mais recente
 
-Teams Bot
-26/10/2026 às 19:52 — horário do GLPI
+Teams Bot:
 
 Chamado aberto pelo Teams — Otto Bot de Chamados
 
@@ -92,9 +90,8 @@ quando a própria mensagem tem várias partes. Não se exibem os prefixos técni
 “Autor:”/“Data:” adicionados anteriormente pelo bot; conteúdo original que
 contenha essas palavras não é removido.
 
-A data é exibida em dia/mês/ano e hora:minuto, sem conversão de fuso ou uso do
-fuso da máquina. A origem “horário do GLPI” permanece explícita. Segundos continuam
-nos dados e na ordenação; só a exibição os omite. Nenhum offset UTC é presumido.
+A data permanece validada e preservada para ordenação e paginação, mas fica
+oculta na apresentação padrão. Nenhuma conversão de fuso é realizada.
 
 ## Renderização e segurança
 

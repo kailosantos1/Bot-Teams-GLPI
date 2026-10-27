@@ -13,7 +13,7 @@
 | Lista de chamados | chamados `1–5`; `7 — Anteriores`, `9 — Próximos` quando disponíveis; `8 — Atualizar`; `0 — Menu` |
 | Detalhes | `1 — Conversa`, `2 — Responder`, `3 — Meus chamados`, `0 — Menu`; descrição dividida usa `7 — Trecho anterior` e `9 — Ver mais` |
 | Conversa | `4 — Voltar ao chamado`, `8 — Atualizar`; `7/9` aparecem somente quando existe direção disponível |
-| Resposta | cancelar, enviar e editar somente nas etapas correspondentes; confirmação mantém `1/2/0` |
+| Resposta | captura oferece `Cancelar resposta`; sucesso oferece `1 — Ver conversa` e `4 — Voltar ao chamado` |
 | Notificação | `Ver chamado`; interrupção de formulário/rascunho mantém as confirmações vinculadas ao estado |
 
 Na conversa, `7/9` recebem nomes contextuais: `Mensagens mais recentes`,
@@ -70,13 +70,10 @@ Local: Matriz
 ```
 
 ```text
-💬 Conversa · #1028
-Mais recentes primeiro
+💬 Mensagem mais recente
 
-Teams Bot
-26/10/2026 às 19:52 — horário do GLPI
-
-Chamado aberto pelo Teams — Otto Bot de Chamados
+T.I Externo:
+teste resposta
 [4 — Voltar ao chamado] [8 — Atualizar] [9 — Mensagens mais antigas]
 ```
 

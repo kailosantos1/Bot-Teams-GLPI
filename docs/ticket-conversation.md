@@ -1,5 +1,48 @@
 # Etapa 5 — detalhes, conversa pública e resposta
 
+> Revisão atual: texto válido é enviado diretamente. A antiga tela de
+> prévia/Enviar/Editar registrada historicamente neste documento não faz mais
+> parte da experiência; seus botões antigos são inertes.
+
+## Fluxo direto atual
+
+```text
+✍️ Digite sua resposta para o chamado #1028.
+Ao enviar a mensagem, ela será registrada no chamado.
+[Cancelar resposta]
+```
+
+Após recibo 201 com ID válido:
+
+```text
+✅ Resposta enviada!
+[1 — Ver conversa]
+[4 — Voltar ao chamado]
+```
+
+`activity.id` é persistido com a operação e tem unicidade no escopo exato de
+identidade, conversa e ticket. Reentrega reutiliza a operação e não repete POST
+confirmado ou incerto. O schema SQLite v4 acrescenta a coluna nullable e índice
+único parcial sem apagar vínculos, notificações ou operações anteriores.
+
+## Autoria apresentada
+
+Um acompanhamento só recebe o nome do requerente quando seu `followup_id`
+confirmado existe em `reply_operations` no mesmo vínculo/conversa/ticket. O nome
+vem da leitura exata do usuário GLPI validado. Somente com essa prova o primeiro
+cabeçalho de origem, no formato estritamente conhecido, é ocultado. Prefixos
+parecidos sem recibo comprovado permanecem integrais e não alteram autoria.
+
+```text
+💬 Mensagem mais recente
+
+João Silva:
+Minha resposta
+```
+
+Datas ficam ocultas na apresentação padrão, mas continuam validadas e usadas na
+ordenação/paginação. A autoria e o conteúdo armazenados no GLPI não são alterados.
+
 Implementação local com APIs simuladas. Não homologada no Teams/GLPI real. Esta etapa substitui a mensagem temporária de seleção da etapa 4. Notificações proativas e anexos de consulta/resposta não foram implementados.
 
 ## Fluxo e exemplos

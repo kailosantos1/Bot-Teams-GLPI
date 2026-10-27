@@ -38,22 +38,35 @@ class ReplyStore(LinkStore):
             db.execute('DELETE FROM reply_operations WHERE updated<?', (now - METADATA_TTL,))
 
     def create(self, binding, ticket, body):
+        return self.create_for_activity(binding, ticket, body, None)[0]
+
+    def create_for_activity(self, binding, ticket, body, activity_id):
         if not valid_reply(body):
             raise ValueError('invalid_reply')
+        if activity_id is not None and (not isinstance(activity_id, str) or not activity_id.strip()
+                or len(activity_id) > 512 or any(unicodedata.category(c)[0] == 'C' for c in activity_id)):
+            raise ValueError('invalid_activity_id')
         self.prepare()
         now, operation = time.time(), secrets.token_urlsafe(24)
+        scope, ticket = self.scope(binding), user_id(ticket)
         with self.connection() as db:
             db.execute('BEGIN IMMEDIATE')
             link = db.execute('SELECT * FROM links WHERE tenant_id=? AND object_id=?',
                               (binding[0], binding[1])).fetchone()
             if not link or link['status'] != 'active' or link['glpi_user_id'] != binding[2]:
                 raise Conflict('link_changed')
+            if activity_id is not None:
+                existing = db.execute('''SELECT id FROM reply_operations
+                    WHERE binding=? AND ticket_id=? AND activity_id=?''',
+                    (scope, ticket, activity_id)).fetchone()
+                if existing:
+                    return existing['id'], False
             db.execute("""INSERT INTO reply_operations
-                (id,binding,ticket_id,body,state,created,updated,expires,link_revision)
-                VALUES (?,?,?,?,'ready',?,?,?,?)""",
-                (operation, self.scope(binding), user_id(ticket), body, now, now,
-                 now + DRAFT_TTL, link['updated_at']))
-        return operation
+                (id,binding,ticket_id,body,state,created,updated,expires,link_revision,activity_id)
+                VALUES (?,?,?,?,'ready',?,?,?,?,?)""",
+                (operation, scope, ticket, body, now, now, now + DRAFT_TTL,
+                 link['updated_at'], activity_id))
+        return operation, True
 
     def get_operation(self, operation, binding, ticket):
         self.prepare()
@@ -122,3 +135,11 @@ class ReplyStore(LinkStore):
             db.execute("""UPDATE reply_operations SET state='cancelled',body=NULL,updated=?
                 WHERE id=? AND binding=? AND ticket_id=? AND state='ready'""",
                 (time.time(), operation, self.scope(binding), user_id(ticket)))
+
+    def sent_followups(self, binding, ticket):
+        """Confirmed receipts in this exact identity/conversation scope."""
+        self.prepare()
+        with self.connection() as db:
+            return {row['followup_id'] for row in db.execute('''SELECT followup_id
+                FROM reply_operations WHERE binding=? AND ticket_id=? AND state='sent'
+                AND followup_id IS NOT NULL''', (self.scope(binding), user_id(ticket)))}

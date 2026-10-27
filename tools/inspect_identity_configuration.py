@@ -35,7 +35,7 @@ def inspect(config):
         with closing(sqlite3.connect(path.as_uri() + '?mode=ro', uri=True, timeout=5)) as db:
             version = db.execute('PRAGMA user_version').fetchone()[0]
             tables = {row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-            if version not in (1, 2, 3):
+            if version not in (1, 2, 3, 4):
                 state = 'unsupported_schema'
             elif not ({'links', 'audit'} | ({'reply_operations'} if version >= 2 else set())
                       | ({'notification_references', 'notification_watches', 'notification_events', 'notification_lease'} if version >= 3 else set())) <= tables:
@@ -43,7 +43,7 @@ def inspect(config):
             else:
                 # Validate the identity columns without exposing any row.
                 db.execute('SELECT tenant_id, object_id, glpi_user_id, status, updated_at FROM links LIMIT 0')
-                state = 'schema_current' if version == 3 else 'schema_upgrade_required'
+                state = 'schema_current' if version == 4 else 'schema_upgrade_required'
             lines.append(f'database: {state}')
     except (sqlite3.Error, OSError, ValueError):
         lines.append('database: unavailable')

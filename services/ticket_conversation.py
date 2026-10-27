@@ -46,7 +46,8 @@ class TicketConversation(TicketQuery):
         except (QueryError, ValueError, TypeError, KeyError, requests.RequestException):
             return 'Autor não identificado'
 
-    def history(self, uid, tid):
+    def history(self, uid, tid, trusted_followups=None):
+        trusted_followups = set(trusted_followups or ())
         with self.session(raw_content=True) as get:
             self.authorize(get, uid, tid)
             rows = self.collection(get, f'/Ticket/{tid}/ITILFollowup')
@@ -63,11 +64,20 @@ class TicketConversation(TicketQuery):
                 if not isinstance(row.get('content'), str) or not isinstance(row.get('date'), str):
                     raise QueryError()
                 datetime.strptime(row['date'], '%Y-%m-%d %H:%M:%S')
-                author_id = str(row.get('users_id'))
+                followup_id = user_id(row['id'])
+                trusted = followup_id in trusted_followups
+                author_id = str(uid if trusted else row.get('users_id'))
                 if author_id not in authors:
-                    authors[author_id] = self.author(get, row.get('users_id'))
+                    authors[author_id] = self.author(get, uid if trusted else row.get('users_id'))
+                content = html_text(row['content'])
+                if trusted:
+                    expected = f'Origem: Microsoft Teams — {authors[author_id]} (requerente com identidade validada).'
+                    fallback = 'Origem: Microsoft Teams — Requerente com identidade validada (requerente com identidade validada).'
+                    first, separator, remainder = content.partition('\n')
+                    if separator and first in {expected, fallback}:
+                        content = remainder.lstrip('\n')
                 public.append({'id': user_id(row['id']), 'date': row['date'],
-                               'author': authors[author_id], 'content': html_text(row['content'])})
+                               'author': authors[author_id], 'content': content})
             # Authorization again after paging, before returning content.
             self.authorize(get, uid, tid)
             return sorted(public, key=lambda x: (x['date'], x['id']), reverse=True)

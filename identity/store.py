@@ -46,14 +46,16 @@ class LinkStore:
         with self.connection() as db:
             db.execute("BEGIN IMMEDIATE")
             version = db.execute("PRAGMA user_version").fetchone()[0]
-            if version not in (0, 1, 2, 3):
+            if version not in (0, 1, 2, 3, 4):
                 raise ValueError("unsupported_schema")
-            if version in (1, 2, 3):
+            if version in (1, 2, 3, 4):
                 if version == 1:
                     self._migrate_replies(db)
                 if version < 3:
                     from .notifications import migrate
                     migrate(db)
+                if version < 4:
+                    self._migrate_reply_activity(db)
                 return
             db.execute("""CREATE TABLE links (
                 tenant_id TEXT NOT NULL, object_id TEXT NOT NULL,
@@ -74,6 +76,7 @@ class LinkStore:
             self._migrate_replies(db)
             from .notifications import migrate
             migrate(db)
+            self._migrate_reply_activity(db)
 
     @staticmethod
     def _migrate_replies(db):
@@ -82,10 +85,19 @@ class LinkStore:
             link_revision TEXT NOT NULL,
             body TEXT, state TEXT NOT NULL CHECK(state IN
                 ('ready','reserved','submitting','sent','uncertain','cancelled','expired')),
-            attempts INTEGER NOT NULL DEFAULT 0, followup_id INTEGER,
+            attempts INTEGER NOT NULL DEFAULT 0, followup_id INTEGER, activity_id TEXT,
             reservation TEXT, created REAL NOT NULL, updated REAL NOT NULL, expires REAL NOT NULL)""")
         db.execute("CREATE INDEX reply_retention ON reply_operations(updated)")
         db.execute("PRAGMA user_version=2")
+
+    @staticmethod
+    def _migrate_reply_activity(db):
+        columns = {row['name'] for row in db.execute('PRAGMA table_info(reply_operations)')}
+        if 'activity_id' not in columns:
+            db.execute('ALTER TABLE reply_operations ADD COLUMN activity_id TEXT')
+        db.execute('''CREATE UNIQUE INDEX IF NOT EXISTS reply_activity_once
+            ON reply_operations(binding,ticket_id,activity_id) WHERE activity_id IS NOT NULL''')
+        db.execute('PRAGMA user_version=4')
 
     def get(self, tenant, object_id):
         with self.connection() as db:

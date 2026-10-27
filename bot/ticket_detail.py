@@ -6,8 +6,8 @@ from config import settings
 from identity.replies import ReplyStore, MAX_REPLY, valid_reply
 from services.ticket_conversation import TicketConversation, AccessDenied
 from services.reply_sender import ReplySender
-from services.ticket_content import passive, pages, PAGE_SIZE
-from bot.ticket_presentation import display_title, glpi_date
+from services.ticket_content import pages, PAGE_SIZE
+from bot.ticket_presentation import display_title
 from bot.activity_attachments import has_real_attachments
 from services.ticket_query import STATUS_LABELS
 
@@ -69,16 +69,19 @@ async def details(context, result, binding, state, tid=None, offset=0):
 
 
 async def history(context, result, state, offset=0):
-    messages = await asyncio.to_thread(service.history, result.glpi_user_id, state['ticket'])
+    binding = state['binding']
+    trusted = await asyncio.to_thread(reply_store.sent_followups, binding, state['ticket'])
+    messages = await asyncio.to_thread(service.history, result.glpi_user_id, state['ticket'], trusted)
     chunks = []
     for message_index, message in enumerate(messages):
         parts = pages(message['content'])
         for i, part in enumerate(parts, 1):
             part_label = f'Parte {i} de {len(parts)}\n' if len(parts) > 1 else ''
             chunks.append(dict(message=message_index, part=i, parts=len(parts), text=
-                f"{message['author']}\n{glpi_date(message['date'])} — horário do GLPI\n\n{part_label}{part}"))
+                f"{message['author']}:\n{part_label}{part}"))
     offset = min(max(0, offset), max(0, len(chunks) - 1))
-    text = (f"💬 Conversa · #{state['ticket']}\nMais recentes primeiro\n\n"
+    heading = '💬 Mensagem mais recente' if chunks and offset == 0 else '💬 Mensagem'
+    text = (heading + '\n\n'
             + (chunks[offset]['text'] if chunks else 'Este chamado ainda não tem mensagens públicas.'))
     actions = [('4', 'Voltar ao chamado'), ('8', 'Atualizar')]
     if offset:
@@ -91,20 +94,9 @@ async def history(context, result, state, offset=0):
 
 
 async def capture(context, state):
-    text = (f"✍️ Digite a mensagem que deseja enviar ao chamado #{state['ticket']}.\n\n"
-            f'Você poderá conferir antes de enviar. Somente texto, até {MAX_REPLY} caracteres.\n'
-            'Para cancelar, use o botão ou digite /cancelar-resposta.\n'
-            'Palavras e números digitados nesta tela serão parte da mensagem.')
-    return await screen(context, state, text, [('cancel', 'Cancelar resposta e voltar ao chamado')], view='capture')
-
-
-async def confirmation(context, state, body, prefix=''):
-    text = (prefix + 'Confira sua mensagem:\n' + passive(body)
-            + '\n\nA prévia oculta endereços e neutraliza formatação; o texto digitado será registrado integralmente.'
-            + '\nDeseja enviar?\nToque em uma opção ou digite o número.\n'
-            'O autor nativo no GLPI será a conta da integração; o texto identificará a origem Teams.')
-    return await screen(context, state, text,
-                        [('send', '1 — Enviar'), ('edit', '2 — Editar'), ('cancel', '0 — Cancelar')], view='confirm')
+    text = (f"✍️ Digite sua resposta para o chamado #{state['ticket']}.\n"
+            'Ao enviar a mensagem, ela será registrada no chamado.')
+    return await screen(context, state, text, [('cancel', 'Cancelar resposta')], view='capture')
 
 
 async def handle(context, raw_text, result, binding, state, payload):
@@ -128,8 +120,12 @@ async def handle(context, raw_text, result, binding, state, payload):
         await query_state_accessor.delete(context)
         from bot.ticket_consult import card
         return card(UNAVAILABLE, '', [('8', 'Atualizar'), ('0', 'Menu principal')])
-    if view == 'confirm' and payload is None:
-        op = {'1': 'enviar', '2': 'editar', '0': '/cancelar-resposta'}.get(op, op)
+    # Confirmation cards from the previous flow are deliberately inert. Their
+    # payload can never trigger ReplySender after direct-send deployment.
+    if view == 'confirm':
+        return await screen(context, dict(state, draft=None),
+            'Esse botão pertence ao fluxo antigo e não pode enviar uma resposta. Volte ao chamado e responda novamente.',
+            [('4', 'Voltar ao chamado')], view='result')
     if view in {'capture', 'confirm'}:
         if payload is None and op == '/tentar-novamente':
             op = 'retry_view'
@@ -143,10 +139,10 @@ async def handle(context, raw_text, result, binding, state, payload):
             draft = await asyncio.to_thread(reply_store.get_operation, state['draft'], binding, state['ticket'])
             if not draft or draft['state'] in {'expired', 'cancelled'} or draft['expires'] <= time.time():
                 return await screen(context, dict(state, draft=None), 'O rascunho expirou. Volte ao chamado para escrever novamente.', [('4', 'Voltar ao chamado')], view='result')
-        if draft and draft['state'] != 'ready' and op not in {'send', 'enviar'}:
+        if draft and draft['state'] != 'ready':
             if draft['state'] == 'sent':
-                return await screen(context, state, f"✅ Sua mensagem foi enviada ao chamado #{state['ticket']}.",
-                                    [('1', 'Atualizar conversa'), ('4', 'Voltar ao chamado')], view='result')
+                return await screen(context, state, '✅ Resposta enviada!',
+                                    [('1', 'Ver conversa'), ('4', 'Voltar ao chamado')], view='result')
             return await screen(context, state, UNCERTAIN,
                                 [('1', 'Atualizar conversa'), ('3', 'Meus chamados')], view='uncertain')
         cancel = op == '/cancelar-resposta' or payload is not None and op == 'cancel'
@@ -155,34 +151,44 @@ async def handle(context, raw_text, result, binding, state, payload):
                 await asyncio.to_thread(reply_store.cancel, state['draft'], binding, state['ticket'])
             return await details(context, result, binding, state)
         if view == 'capture':
-            if payload is not None or op == 'retry_view':
+            if op == 'retry_view':
                 return await capture(context, state)
-            raw_text = raw_text.replace('\r\n', '\n').replace('\r', '\n')
-            if not valid_reply(raw_text):
-                return await screen(context, state, f'Digite uma mensagem de 1 a {MAX_REPLY} caracteres. Ela não foi enviada.', [('cancel', 'Cancelar')])
-            operation = await asyncio.to_thread(reply_store.create, binding, state['ticket'], raw_text)
-            return await confirmation(context, dict(state, draft=operation), raw_text)
-        if not draft:
-            raise ValueError('draft_missing')
-        if op in {'send', 'enviar'}:
-            outcome = await asyncio.to_thread(ReplySender(reply_store, service).send, state['draft'], binding, state['ticket'])
+            if payload is not None and op != 'retry_send':
+                return await capture(context, state)
+            created_now = False
+            if not draft:
+                raw_text = raw_text.replace('\r\n', '\n').replace('\r', '\n')
+                if not valid_reply(raw_text):
+                    return await screen(context, state, f'Digite uma mensagem de 1 a {MAX_REPLY} caracteres. Ela não foi enviada.', [('cancel', 'Cancelar resposta')])
+                activity_id = getattr(context.activity, 'id', None)
+                if not isinstance(activity_id, str) or not activity_id.strip():
+                    return await screen(context, state,
+                        'Não consegui identificar esta mensagem com segurança. Ela não foi enviada. Tente novamente.',
+                        [('cancel', 'Cancelar resposta')])
+                operation, _ = await asyncio.to_thread(
+                    reply_store.create_for_activity, binding, state['ticket'], raw_text, activity_id)
+                state = dict(state, draft=operation)
+                await query_state_accessor.set(context, state)
+                created_now = True
+            if not created_now and op != 'retry_send':
+                return await screen(context, state,
+                    'Sua resposta anterior foi preservada e ainda não foi enviada. Use Tentar novamente ou cancele a resposta.',
+                    [('retry_send', 'Tentar novamente'), ('cancel', 'Cancelar resposta')], view='capture')
+            outcome = await asyncio.to_thread(ReplySender(reply_store, service).send,
+                                              state['draft'], binding, state['ticket'])
             if outcome == 'sent':
-                return await screen(context, state, f"✅ Sua mensagem foi enviada ao chamado #{state['ticket']}.",
-                                    [('1', 'Atualizar conversa'), ('4', 'Voltar ao chamado'), ('0', 'Menu principal')], view='result')
+                return await screen(context, state, '✅ Resposta enviada!',
+                                    [('1', 'Ver conversa'), ('4', 'Voltar ao chamado')], view='result')
             if outcome == 'retry':
-                return await confirmation(context, state, draft['body'], 'Não consegui preparar o envio. Seu rascunho foi preservado.\n\n')
+                return await screen(context, state,
+                    'Não consegui preparar o envio. Sua resposta foi preservada e não foi enviada.',
+                    [('retry_send', 'Tentar novamente'), ('cancel', 'Cancelar resposta')], view='capture')
             if outcome == 'denied':
                 await query_state_accessor.delete(context)
                 from bot.ticket_consult import card
                 return card(UNAVAILABLE, '', [('8', 'Atualizar lista'), ('0', 'Menu principal')])
             return await screen(context, state, UNCERTAIN,
-                                [('1', 'Atualizar conversa'), ('3', 'Meus chamados'), ('0', 'Menu principal')], view='uncertain')
-        if draft['state'] != 'ready':
-            return await screen(context, state, UNCERTAIN, [('1', 'Atualizar conversa')], view='uncertain')
-        if op in {'edit', 'editar'}:
-            await asyncio.to_thread(reply_store.cancel, state['draft'], binding, state['ticket'])
-            return await capture(context, dict(state, draft=None))
-        return await confirmation(context, state, draft['body'])
+                                [('1', 'Ver conversa'), ('4', 'Voltar ao chamado')], view='uncertain')
     if op in {'0', 'menu'}:
         from bot.cards import build_menu_activity
         from bot.ticket_consult import nav_state_accessor
